@@ -22,13 +22,19 @@
     font-weight: normal;
     font-style: normal;
 }
-
+@font-face {
+    font-family: 'VideoJS';
+    src: url('../fonts/video-js/vjs.eot');
+    src: url('../fonts/video-js/vjs.eot?#iefix') format('embedded-opentype'), url('../fonts/video-js/vjs.woff') format('woff'), url('../fonts/video-js/vjs.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
 /*-----------------------------------*/
 /* General Styles */
 /*-----------------------------------*/
 
 body, .body-wrap{
-    background: none;
+
     filter:none;
 }
 body{
@@ -254,7 +260,7 @@ body{
 }
 .description p{
     font: normal normal 14px/20px 'Cabin', sans-serif;
-    color: #65686a;
+    color: #333;
     text-shadow: none;
     margin-bottom: 21px;
 }
