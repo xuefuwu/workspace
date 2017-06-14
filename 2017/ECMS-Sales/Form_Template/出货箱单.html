@@ -1,0 +1,495 @@
+<p>
+</p><script>
+function getmeasure(e){
+	var srcEle
+if(!!e.originalEvent){
+srcEle = e.originalEvent.srcElement;
+}else{
+srcEle = e;
+}
+	var trCurrent = $(srcEle).closest("tr");
+	var trIndex = $(srcEle).closest("tr").index();
+	var tdIndex = $(srcEle).closest("td").index();
+	var xlength = $(trCurrent).find(":text[name='s\\:crm_packingitems\\:length']").val();
+	var xwidth =  $(trCurrent).find(":text[name='s\\:crm_packingitems\\:width']").val();
+	var xheight =  $(trCurrent).find(":text[name='s\\:crm_packingitems\\:height']").val();
+	var measurevalue = (xlength*xwidth*xheight)/1000000;
+	var measurement = xlength.substring(0,xlength.indexOf(".")>-1?xlength.indexOf("."):xlength.length)+"*"+xwidth.substring(0,xwidth.indexOf(".")>-1?xwidth.indexOf("."):xwidth.length)+"*"+xheight.substring(0,xheight.indexOf(".")>-1?xheight.indexOf("."):xheight.length);
+	$(trCurrent).find(":text[name='s\\:crm_packingitems\\:measurement']").val(measurement);
+	$(trCurrent).find(":text[name='s\\:crm_packingitems\\:measurevalue']").val(measurevalue.toFixed(2));
+}
+function getpaymenttermList(){
+    var url = "/ecms/commons/fulldescajax.jsp";
+    var il = new Array();
+    $.post(url,{f:"getpaymenttermlist"},function(data){
+        var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+        $.each(jsondata, function (i, item) {
+            il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
+        });
+        var inquiryselect = tinyselect("div#paymentterm", {
+            item: {
+                data: il,
+                value:$(":hidden[name='m\\:crm_packinglist\\:paymentterms']").val().length>0?$(":hidden[name='m\\:crm_packinglist\\:paymentterms']").val().split(','):null
+            },
+            result: {
+                multi: false
+            }
+        });
+    },"json");
+}
+function getshippingtermList(){
+    var url = "/ecms/commons/fulldescajax.jsp";
+    var il = new Array();
+    $.post(url,{f:"getshippingtermlist"},function(data){
+        var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+        $.each(jsondata, function (i, item) {
+            il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
+        });
+        var inquiryselect = tinyselect("div#shippingterm", {
+            item: {
+                data: il,
+                value:$(":hidden[name='m\\:crm_packinglist\\:shippingterms']").val().length>0?$(":hidden[name='m\\:crm_packinglist\\:shippingterms']").val().split(','):null
+            },
+            result: {
+                multi: false
+            }
+        });
+    },"json");
+}
+function excelKeydown(e){
+	var subtotal = 0.0;
+	var srcEle = e.originalEvent.srcElement;
+	var trIndex = $(srcEle).closest("tr").index();
+	var tdIndex = $(srcEle).closest("td").index();
+    if (event.keyCode == 38) {
+		$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex - 1) + ")").find("td:eq(" + tdIndex + ")").find(":text:first,textarea:first").focus();
+	} else {
+		if (event.keyCode == 40 || event.keyCode == 13|| event.keyCode == 9) {
+			if(event.keyCode == 40 || event.keyCode == 13){
+				if (!$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex + 1) + ")")[0]) {
+					CustomForm.add($(srcEle).closest("div[type=subtable]"));
+				}
+				$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex + 1) + ")").find("td:eq(" + tdIndex + ")").find(":text:first,textarea:first").focus();
+				}
+			if(event.keyCode == 13 || event.keyCode == 9){
+				getmeasure(e);
+			}
+		}
+	}
+}
+function excelPaste(e){
+    var eve = e.originalEvent;
+    var cp = eve.clipboardData;
+    var data = null;
+    var clipboardData = window.clipboardData;
+    if (!clipboardData) {
+        clipboardData = e.originalEvent.clipboardData;
+    }
+    data = clipboardData.getData("Text");
+    readClipboardData(e, data);
+    e.preventDefault();
+}
+function readClipboardData(tdobj, clipData) {
+    var tableObj = $(tdobj).closest("table.listTable");
+    var rows = clipData.split("\n");
+    var trIndex = $(tdobj).closest("tr").index();
+    var tdIndex = $(tdobj).closest("td").index();
+    var cols;
+    if (rows.length > 1) {
+        for (var i = 0; i < rows.length - 1; i++) {
+                cols = rows[i].split("\t");
+                for (var j = 0; j <= cols.length - 1; j++) {
+                    if($(tableObj).find("tr:eq("+(trIndex+i)+")")[0]){
+                        $(tableObj).find("tr:eq("+(trIndex+i)+")").find("td:eq("+(tdIndex+j)+")").find(":input:first").val(cols[j]);
+                    }else{
+                        CustomForm.add($("div[type=subtable]:first"));
+                        $(tableObj).find("tr:eq("+(trIndex+i)+")").find("td:eq("+(tdIndex+j)+")").find(":input:first").val(cols[j]);
+                    }
+                }
+                getmeasure($(tableObj).find("tr:eq("+(trIndex+i)+")").find(":input:first"));
+        }
+    } else {
+        $(tdobj).val(clipData);
+    }
+};
+$(function() {
+	getshippingtermList();
+	getpaymenttermList();
+	$(":text[name='s\\:crm_packingitems\\:length']").bind("input change",function(e){
+		 getmeasure(e);
+	});
+	$(":text[name='s\\:crm_packingitems\\:width']").bind("input change",function(e){
+		 getmeasure(e);
+	});
+	$(":text[name='s\\:crm_packingitems\\:height']").bind("input change",function(e){
+		 getmeasure(e);
+	});
+	$("a.link.add").click(function(){
+		$("table.listTable").find("tr:last").find(":text[name='s\\:crm_packingitems\\:length']").bind("input change",function(e){
+			 getmeasure(e);
+		});
+		$("table.listTable").find("tr:last").find(":text[name='s\\:crm_packingitems\\:width']").bind("input change",function(e){
+			 getmeasure(e);
+		});
+		$("table.listTable").find("tr:last").find(":text[name='s\\:crm_packingitems\\:height']").bind("input change",function(e){
+			 getmeasure(e);
+		});
+	});
+});
+</script>
+<table class="formTable" cellspacing="0" cellpadding="2" border="1" uetable="null">
+    <thead>
+        <tr>
+            <th class="formHead" colspan="4">
+                Packing List
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Ship Info
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:commercialno">Commercial Invoice No</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:commercialno" isflag="tableflag" lablename="Commercial Invoice No" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:pi">Proforma Invoice</span>:
+            </td>
+            <td class="formInput" style="width:35%;word-break:break-all">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:pi" isflag="tableflag" lablename="Proforma Invoice" validate="{maxlength:2000}" /></span><span style="display:inline-block" name="editable-input"><a class="extend script" href="javascript:;" dialog="{name:&#39;xsfp&#39;,fields:[{src:&#39;ID&#39;,target:&#39;piid&#39;},{src:&#39;F_PROFORMAINVOICE&#39;,target:&#39;pi&#39;}],query:[]}">查找</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:companyheader">CompanyHeader</span>:
+            </td>
+            <td class="formInput" style="width:35%;word-break:break-all">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:companyheader" isflag="tableflag" lablename="CompanyHeader" validate="{maxlength:2000}" /></span><span style="display:inline-block" name="editable-input"><a class="extend script" href="javascript:;" dialog="{name:&#39;pdfbbtt&#39;,fields:[{src:&#39;F_DOCNAME&#39;,target:&#39;headerdoc&#39;},{src:&#39;F_CNTITLE&#39;,target:&#39;companyheader&#39;}],query:[]}">查找</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:invoicedate">Invoice Date</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_packinglist:invoicedate" validate="{empty:false}" displaydate="0" datefmt="yyyy-MM-dd" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:ponumber">PO Number</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><textarea class="l-textarea" rows="5" cols="40" name="m:crm_packinglist:ponumber" isflag="tableflag" lablename="PO Number" validate="{maxlength:2000}"></textarea></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shippingmethod">Shipping Method</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_packinglist:shippingmethod" lablename="Shipping Method" validate="{empty:false}" nodekey="shipping_method" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shippingterms">Shipping Terms</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_packinglist:shippingterms" /><input type="hidden" name="m:crm_packinglist:shippingtermid" />
+                    <div id="shippingterm" class="tinyselectcontext" data-hidden="m:crm_packinglist:shippingtermid" data-text="m:crm_packinglist:shippingterms">
+                    </div>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:paymentterms">Payment Terms</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_packinglist:paymentterms" /><input type="hidden" name="m:crm_packinglist:paymentterid" />
+                    <div id="paymentterm" class="tinyselectcontext" data-hidden="m:crm_packinglist:paymentterid" data-text="m:crm_packinglist:paymentterms">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shippingmark">Shipping Mark</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea name="m:crm_packinglist:shippingmark" validate="{empty:false}"></textarea>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:remark">Remark</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea name="m:crm_packinglist:remark" validate="{empty:false}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:year">Year</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:year" isflag="tableflag" lablename="Year" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:month">Month</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:month" isflag="tableflag" lablename="Month" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Ship To Info
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shipto">Ship To</span>:
+            </td>
+            <td class="formInput" style="width:35%;word-break:break-all">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:shipto" isflag="tableflag" lablename="Ship To" validate="{maxlength:2000}" /></span><span style="display:inline-block" name="editable-input"><a class="extend user" href="javascript:;" dialog="{name:&#39;customercontact&#39;,fields:[{src:&#39;F_COMPANYNAME&#39;,target:&#39;shiptooffice&#39;},{src:&#39;F_FULLNAME&#39;,target:&#39;shipto&#39;},{src:&#39;F_ADDRESS&#39;,target:&#39;shiptoaddress&#39;},{src:&#39;F_CITY&#39;,target:&#39;shiptocity&#39;},{src:&#39;F_STATEPROVINCE&#39;,target:&#39;shiptostate&#39;},{src:&#39;F_ZIPPOSTALCODE&#39;,target:&#39;shiptozip&#39;},{src:&#39;F_COUNTRYREGION&#39;,target:&#39;shiptocountry&#39;},{src:&#39;F_FAXNUMBER&#39;,target:&#39;shiptofax&#39;},{src:&#39;F_WORKPHONE&#39;,target:&#39;shiptotel&#39;},{src:&#39;F_EMAILADDRESS&#39;,target:&#39;shiptoemail&#39;}],query:[]}">查找联系人</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shiptooffice">Ship To Office</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:shiptooffice" isflag="tableflag" lablename="Ship To Office" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shiptoaddress">Ship To Address</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea name="m:crm_packinglist:shiptoaddress" validate="{empty:false}"></textarea>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shiptocity">Ship To City</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:shiptocity" isflag="tableflag" lablename="Ship To City" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shiptostate">Ship To State/Province</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:shiptostate" isflag="tableflag" lablename="Ship To State/Province" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shiptocountry">Ship To Country</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:shiptocountry" isflag="tableflag" lablename="Ship To Country" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shiptozip">Ship To ZIP/Postal Code</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:shiptozip" isflag="tableflag" lablename="Ship To ZIP/Postal Code" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shiptotel">Ship To TEL</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:shiptotel" isflag="tableflag" lablename="Ship To TEL" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shiptofax">Ship To FAX</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:shiptofax" isflag="tableflag" lablename="Ship To FAX" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:shiptoemail">Ship To Email</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:shiptoemail" isflag="tableflag" lablename="Ship To Email" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Bill To Info
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billto">Bill To</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:billto" isflag="tableflag" lablename="Bill To" validate="{maxlength:2000}" /></span><span style="display:inline-block" name="editable-input"><a class="extend user" href="javascript:;" dialog="{name:&#39;customercontact&#39;,fields:[{src:&#39;F_COMPANYNAME&#39;,target:&#39;billtooffice&#39;},{src:&#39;F_FULLNAME&#39;,target:&#39;billto&#39;},{src:&#39;F_ADDRESS&#39;,target:&#39;billtoaddress&#39;},{src:&#39;F_CITY&#39;,target:&#39;billtocity&#39;},{src:&#39;F_STATEPROVINCE&#39;,target:&#39;billtostate&#39;},{src:&#39;F_ZIPPOSTALCODE&#39;,target:&#39;billtozip&#39;},{src:&#39;F_COUNTRYREGION&#39;,target:&#39;billtocountry&#39;},{src:&#39;F_FAXNUMBER&#39;,target:&#39;billtofax&#39;},{src:&#39;F_WORKPHONE&#39;,target:&#39;billtotel&#39;},{src:&#39;F_EMAILADDRESS&#39;,target:&#39;billtoemail&#39;}],query:[]}">查找联系人</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billtooffice">Bill To Offic</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:billtooffice" isflag="tableflag" lablename="Bill To Offic" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billtoaddress">Bill To Address</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea name="m:crm_packinglist:billtoaddress" validate="{empty:false}"></textarea>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billtocity">Bill To City</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:billtocity" isflag="tableflag" lablename="Bill To City" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billtostate">Bill To State/Province</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:billtostate" isflag="tableflag" lablename="Bill To State/Province" validate="{maxlength:50}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billtocountry">Bill To Country</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:billtocountry" isflag="tableflag" lablename="Bill To Country" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billtozip">Bill To ZIP/Postal Code</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:billtozip" isflag="tableflag" lablename="Bill To ZIP/Postal Code" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billtotel">Bill To TEL</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:billtotel" isflag="tableflag" lablename="Bill To TEL" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billtofax">Bill To FAX</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:billtofax" isflag="tableflag" lablename="Bill To FAX" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_packinglist:billtoemail">Bill To Email</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_packinglist:billtoemail" isflag="tableflag" lablename="Bill To Email" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" type="hidden" name="m:crm_packinglist:piid" isflag="tableflag" lablename="piid" validate="{maxlength:2000}" /><input class="inputText" type="hidden" name="m:crm_packinglist:headerdoc" isflag="tableflag" lablename="headerdoc" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+            </td>
+            <td class="formInput" style="width:35%">
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p>
+</p>
+<div type="subtable" tablename="crm_packingitems">
+    <br />
+    <div class="subTableToolBar l-tab-links">
+        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a>
+    </div>
+    <table class="listTable" uetable="null">
+        <tbody>
+            <tr>
+                <th class="formHead" colspan="11">
+                    Packing Items
+                </th>
+            </tr>
+            <tr class="headRow">
+                <th>
+                    <span i18nkey="s:crm_packingitems:caseno">Case No</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:commodity">Commodity</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:package">Package</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:quantity">Quantity</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:netwt">Net WT</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:grosswt">Gross WT</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:length">Length</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:width">Width</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:height">Height</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:measurement">measurement</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_packingitems:measurevalue">Measure Value</span>
+                </th>
+            </tr>
+            <tr class="listRow" formtype="edit">
+                <td>
+                    <input style="height:21px;width:50px" size="1" name="s:crm_packingitems:caseno" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="height:21px;width:400px" name="s:crm_packingitems:commodity" isflag="tableflag" lablename="Commodity" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <input style="height:21px;width:50px" size="1" name="s:crm_packingitems:package" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+                </td>
+                <td>
+                    <input style="height:21px;width:50px" size="1" name="s:crm_packingitems:quantity" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+                </td>
+                <td>
+                    <input style="height:21px;width:50px" size="1" name="s:crm_packingitems:netwt" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="height:21px;width:50px" size="1" name="s:crm_packingitems:grosswt" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="height:21px;width:75px" size="1" name="s:crm_packingitems:length" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="height:21px;width:50px" size="1" name="s:crm_packingitems:width" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="height:21px;width:50px" size="1" name="s:crm_packingitems:height" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="s:crm_packingitems:measurement" isflag="tableflag" lablename="measurement" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <input name="s:crm_packingitems:measurevalue" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

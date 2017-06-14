@@ -1,0 +1,224 @@
+<p>
+    <br />
+</p>
+<script>
+    function mathUnpaid(e){
+        var srcEle;
+        if(!!e.originalEvent){
+            srcEle = e.originalEvent.srcElement;
+        }else{
+            srcEle = e;
+        }
+        var receivedPaid = 0.0;
+        var tableCurrent = $(srcEle).closest("table");
+        $.each($(tableCurrent).find(":text[name='s\\:crm_receivabledetail\\:transferred']"),function(index,item){
+            receivedPaid += parseFloat($(item).val());
+        });
+        var orderamount = parseFloat($(":text[name='m\\:crm_receiverecord\\:orderamount']").val());
+        var creditmemo = parseFloat($(":text[name='m\\:crm_receiverecord\\:creditmemo']").val());
+        var bankcharge = parseFloat($(":text[name='m\\:crm_receiverecord\\:bankcharge']").val());
+        var shippingpayment = parseFloat($(":text[name='m\\:crm_receiverecord\\:shippingpayment']").val());
+        var commosion = parseFloat($(":text[name='m\\:crm_receiverecord\\:yj']").val());
+        $(":text[name='m\\:crm_receiverecord\\:unpaid']").val((orderamount-receivedPaid-creditmemo-bankcharge).toFixed(2));
+    }
+    $(function(){
+        $(":text[name='s\\:crm_receivabledetail\\:transferred']").bind("input change",function(e){
+            mathUnpaid(e);
+        });
+        $("a.link.add").click(function(){
+            $(":text[name='s\\:crm_receivabledetail\\:transferred']").bind("input change",function(e){
+                mathUnpaid(e);
+            });
+        });
+    });
+</script>
+<table class="formTable" cellspacing="0" cellpadding="2" border="1">
+    <thead>
+        <tr>
+            <th class="formHead" colspan="4">
+                Receivable Record
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:pino">PI Number</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_receiverecord:pino" isflag="tableflag" validate="{maxlength:2000}" lablename="PI Number" /></span><span style="display:inline-block" name="editable-input"><a class="extend remoteupload" href="javascript:;" dialog="{name:&#39;ddjl&#39;,fields:[{src:&#39;F_CUSTOMER&#39;,target:&#39;customer&#39;},{src:&#39;F_COUNTRY&#39;,target:&#39;country&#39;},{src:&#39;F_PINO&#39;,target:&#39;pino&#39;},{src:&#39;F_TOTALVALUE&#39;,target:&#39;orderamount&#39;},{src:&#39;F_PAYMENTTERM&#39;,target:&#39;paymentterm&#39;},{src:&#39;F_SALESMANAGER&#39;,target:&#39;sales&#39;},{src:&#39;F_PIID&#39;,target:&#39;piid&#39;}],query:[]}">查找</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:customer">Customer</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_receiverecord:customer" isflag="tableflag" validate="{maxlength:2000}" lablename="Customer" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:country">Country</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_receiverecord:country" isflag="tableflag" validate="{maxlength:2000}" lablename="Country" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:orderamount">Order Amount</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_receiverecord:orderamount" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:paymentterm">Payment Term</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_receiverecord:paymentterm" isflag="tableflag" validate="{maxlength:2000}" lablename="Payment Term" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:sales">Sales</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_receiverecord:salesID" lablename="SalesID" /><input readonly="readonly" name="m:crm_receiverecord:sales" validate="{empty:false}" lablename="Sales" showcuruser="0" /><a class="link user" href="javascript:;" name="m:crm_receiverecord:sales" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_receiverecord:sales" atype="reset">重置</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:creditmemo">Credit Memo</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_receiverecord:creditmemo" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:bankcharge">Bank Charge</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_receiverecord:bankcharge" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:unpaid">Unpaid</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_receiverecord:unpaid" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:yj">佣金</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_receiverecord:yj" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:shippingpayment">Shipping Payment</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_receiverecord:shippingpayment" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:fhsj">发货时间</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_receiverecord:fhsj" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:sfwzfh">是否完整发货</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_receiverecord:sfwzfh" validate="{empty:false}" lablename="是否完整发货" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="yes">
+                            是
+                        </option>
+                        <option value="no">
+                            否
+                        </option></select></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:sfqesk">是否全额收款</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_receiverecord:sfqesk" validate="{empty:false}" lablename="是否全额收款" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="yes">
+                            是
+                        </option>
+                        <option value="no">
+                            否
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:year">Year</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_receiverecord:year" isflag="tableflag" validate="{maxlength:2000}" lablename="Year" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:month">Month</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_receiverecord:month" isflag="tableflag" validate="{maxlength:2000}" lablename="Month" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_receiverecord:Remark">Remark</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><textarea class="l-textarea" rows="5" cols="40" name="m:crm_receiverecord:Remark" isflag="tableflag" validate="{maxlength:2000}" lablename="Remark"></textarea></span>
+            </td>
+            <td class="formTitle" style="width:15%;word-break:break-all" nowrap="nowrap" align="right">
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" type="hidden" name="m:crm_receiverecord:piid" isflag="tableflag" validate="{maxlength:2000}" lablename="piid" /></span>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p>
+    <br />
+</p>
+<div tablename="crm_receivabledetail" type="subtable">
+    <br />
+    <div class="subTableToolBar l-tab-links">
+        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a>
+    </div>
+    <table class="listTable" uetable="null">
+        <thead>
+            <tr>
+                <th class="formHead" colspan="2">
+                    Receivable Detail
+                </th>
+            </tr>
+            <tr class="headRow">
+                <th>
+                    <span i18nkey="s:crm_receivabledetail:receiveddate">Received Date</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_receivabledetail:transferred">Transferred</span>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="listRow" formtype="edit">
+                <td>
+                    <input class="Wdate" name="s:crm_receivabledetail:receiveddate" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+                </td>
+                <td>
+                    <input name="s:crm_receivabledetail:transferred" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
