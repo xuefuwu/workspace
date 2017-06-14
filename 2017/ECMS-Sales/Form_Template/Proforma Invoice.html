@@ -1,0 +1,540 @@
+<p>
+    <br />
+</p><script type="text/javascript">
+$(function(){
+   	getshippingtermList();
+	getpaymenttermList();
+
+	if($(":text[name='m\\:crm_proforma_invoice\\:issuedate']")){
+		var quotedate = $(":text[name='m\\:crm_proforma_invoice\\:issuedate']").val();
+		var date = new Date(quotedate.replace(/-/g,"/"));
+		$(":text[name='m\\:crm_proforma_invoice\\:Year']").val(date.getFullYear());
+		$(":text[name='m\\:crm_proforma_invoice\\:Month']").val(date.getMonth()+1);
+	}
+    $("table.listTable").find(":text:visible").bind("paste",function(e) {
+        excelPaste(e);
+    });
+    $("table.listTable").delegate(":text:visible","keydown",function(e){
+		excelKeydown(e);
+	});
+    $("a.getinquiry").click(function(){
+		if($("table.formTable").find(":hidden[name='m\\:crm_proforma_invoice\\:QuotationID']").val()!=""){
+			getInquiry($("table.formTable").find(":hidden[name='m\\:crm_proforma_invoice\\:QuotationID']").val());
+		}
+	});
+    $(":text[name='m\\:crm_proforma_invoice\\:discount']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+	$(":text[name='m\\:crm_proforma_invoice\\:salestax']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+	$(":text[name='m\\:crm_proforma_invoice\\:documentcharge']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+	$(":text[name='m\\:crm_proforma_invoice\\:freight']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+});
+function getshippingtermList(){
+    var url = "/ecms/commons/fulldescajax.jsp";
+    var il = new Array();
+    $.post(url,{f:"getshippingtermlist"},function(data){
+        var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+        $.each(jsondata, function (i, item) {
+            il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
+        });
+        var inquiryselect = TinySelect("div#shippingterm", {
+            item: {
+                data: il,
+                value:$(":hidden[name='m\\:crm_proforma_invoice\\:shippingterm']").val().length>0?$(":hidden[name='m\\:crm_proforma_invoice\\:shippingterm']").val().split(','):null
+            },
+            result: {
+                multi: false
+            }
+        });
+    },"json");
+}
+function getpaymenttermList(){
+    var url = "/ecms/commons/fulldescajax.jsp";
+    var il = new Array();
+    $.post(url,{f:"getpaymenttermlist"},function(data){
+        var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+        $.each(jsondata, function (i, item) {
+            il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
+        });
+        var inquiryselect = TinySelect("div#paymentterm", {
+            item: {
+                data: il,
+                value:$(":hidden[name='m\\:crm_proforma_invoice\\:paymentterm']").val().length>0?$(":hidden[name='m\\:crm_proforma_invoice\\:paymentterm']").val().split(','):null
+            },
+            result: {
+                multi: false
+            }
+        });
+    },"json");
+}
+function sumsubtotal(e){
+	var subtotal = 0.0;
+	var srcEle = e.originalEvent.srcElement;
+	$.each($("table.listTable").find(":text[name='s\\:crm_proforma_items\\:linetotal'],textarea[name='s\\:crm_proforma_items\\:linetotal']"),function(i,item){
+		subtotal += parseFloat($(item).val());
+	});
+	if($(":text[name='m\\:crm_proforma_invoice\\:discount']").val()!=""){
+		subtotal += parseFloat($(":text[name='m\\:crm_proforma_invoice\\:discount']").val().split(',').join(""));
+	}
+	if($(":text[name='m\\:crm_proforma_invoice\\:salestax']").val()!=""){
+		subtotal += parseFloat($(":text[name='m\\:crm_proforma_invoice\\:salestax']").val().split(',').join(""));
+	}
+	if($(":text[name='m\\:crm_proforma_invoice\\:documentcharge']").val()!=""){
+		subtotal += parseFloat($(":text[name='m\\:crm_proforma_invoice\\:documentcharge']").val().split(',').join(""));
+	}
+	if($(":text[name='m\\:crm_proforma_invoice\\:freight']").val()!=""){
+		subtotal += parseFloat($(":text[name='m\\:crm_proforma_invoice\\:freight']").val().split(',').join(""));
+	}
+	$(":text[name='m\\:crm_proforma_invoice\\:total']").val(subtotal);
+}
+function InquiryContains(inqiryList,inputList){
+	var inputids = new Array(),inquiryids = new Array();
+	$.each(inputList,function(i,item){
+		inputids.push($(item).val());
+	});
+	$.each(inqiryList,function(i,item){
+		if($.inArray(item.F_INQUIRYID.toString(),inputids)<0){
+			inquiryids.push(item);
+		}
+	});
+	return inquiryids;
+}
+function getInquiry(QuotationID){
+	var rtn="";
+	var url="/ecms/commons/fulldescajax.jsp";
+    var subtotal = 0.0;
+    /*
+    $.ajaxSetup({
+        async: false
+    });
+    */
+    $.post(url,{f:'getquote_inquiryno',quoteid:QuotationID},function(data){
+        var jsondata = typeof(data)=='string'?$.parseJSON(data):data;
+        var returnValve = '';
+        var tableObj = $("table.listTable");
+        var notexistarray = InquiryContains(jsondata,$(tableObj).find(":hidden[name='s\\:crm_proforma_items\\:InquiryID']"));
+        //if (!$(tableObj).find("tr:last").find(":text:first,textarea:first")[0]) {
+            CustomForm.add($(tableObj).closest("div[type=subtable]"));
+        //}
+        var trIndex = $(tableObj).find("tr:last").index();
+        var tdIndex = $(tableObj).find("tr:last").closest("td").index();
+        $.each(notexistarray, function (i, item) {
+            if(item.F_MODELNUMBER){
+                if (!$(tableObj).find("tr:eq(" + (trIndex + i) + ")")[0]) {
+                    CustomForm.add($(tableObj).closest("div[type=subtable]"));
+                }
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":hidden[name='s\\:crm_proforma_items\\:InquiryID'],textarea[name='s\\:crm_proforma_items\\:InquiryID']").val(item.F_INQUIRYID);
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":hidden[name='s\\:crm_proforma_items\\:QuoteID'],textarea[name='s\\:crm_proforma_items\\:QuoteID']").val(item.ID);
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_proforma_items\\:modelnumber'],textarea[name='s\\:crm_proforma_items\\:modelnumber']").val(item.F_MODELNUMBER);
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_proforma_items\\:itemno'],textarea[name='s\\:crm_proforma_items\\:itemno']").val(item.F_ITEMNO);
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_proforma_items\\:qty'],textarea[name='s\\:crm_proforma_items\\:qty']").val(item.F_QTY);
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_proforma_items\\:tagcode'],textarea[name='s\\:crm_proforma_items\\:tagcode']").val(item.F_TAGCODE);
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_proforma_items\\:unitprice'],textarea[name='s\\:crm_proforma_items\\:unitprice']").val(item.F_UNITPRICE);
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_proforma_items\\:linetotal'],textarea[name='s\\:crm_proforma_items\\:linetotal']").val(item.F_LINETOTAL);
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_proforma_items\\:fulldescription'],textarea[name='s\\:crm_proforma_items\\:fulldescription']").val(item.F_FULLDESCRIPTION);
+                $(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_proforma_items\\:linedescription'],textarea[name='s\\:crm_proforma_items\\:linedescription']").val(item.F_DESCRIPTIONLINE);
+            }
+        });
+    },'json');	
+	return rtn;
+}
+function excelKeydown(e){
+	var subtotal = 0.0;
+	var srcEle = e.originalEvent.srcElement;
+	var trIndex = $(srcEle).closest("tr").index();
+	var tdIndex = $(srcEle).closest("td").index();
+    if (event.keyCode == 38) {
+		$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex - 1) + ")").find("td:eq(" + tdIndex + ")").find(":text:first,textarea:first").focus();
+	} else {
+		if (event.keyCode == 40 || event.keyCode == 13|| event.keyCode == 9) {
+			if(event.keyCode == 40 || event.keyCode == 13){
+				if (!$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex + 1) + ")")[0]) {
+					CustomForm.add($(srcEle).closest("div[type=subtable]"));
+				}
+				$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex + 1) + ")").find("td:eq(" + tdIndex + ")").find(":text:first,textarea:first").focus();
+				}
+			if(event.keyCode == 13 || event.keyCode == 9){
+				
+				var up = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_proforma_items\\:unitprice'],textarea[name='s\\:crm_proforma_items\\:unitprice']").val());
+				var sl = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_proforma_items\\:qty'],textarea[name='s\\:crm_proforma_items\\:qty']").val());
+				
+				$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_proforma_items\\:linetotal'],textarea[name='s\\:crm_proforma_items\\:linetotal']").val((up*sl).toFixed(2));
+				$.each($(srcEle).closest("table.listTable").find(":text[name='s\\:crm_proforma_items\\:linetotal'],textarea[name='s\\:crm_proforma_items\\:linetotal']"),function(i,item){
+					subtotal += parseFloat($(item).val());
+				});
+				$("table.formTable").find(":text[name='m\\:crm_proforma_invoice\\:subtotal']").val(subtotal);
+			}
+		}
+	}
+}
+</script>
+<table class="formTable" cellspacing="0" cellpadding="2" border="1">
+    <thead>
+        <tr>
+            <th class="formHead" colspan="4">
+                Proforma Invoice
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Invoice Info
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:proformainvoice">Proforma Invoice</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_proforma_invoice:proformainvoice" isflag="tableflag" validate="{maxlength:2000}" lablename="Proforma Invoice" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:orderfrom">Order Type/Order From</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_proforma_invoice:ordertype" validate="{empty:false}" lablename="Order Type" controltype="select">
+                        <option selected="selected" value="common">
+                            普通订单
+                        </option>
+                        <option value="project">
+                            项目订单
+                        </option>
+                        <option value="newcustomer">
+                            新客户订单
+                        </option></select></span><span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_proforma_invoice:orderfrom" validate="{empty:false}" lablename="Order From" controltype="select">
+                        <option selected="selected" value="CNOffice">
+                            China Office
+                        </option>
+                        <option value="USOffice">
+                            US Office
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:companyheader">CompanyHeader</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_proforma_invoice:companyheader" validate="{empty:false}" lablename="CompanyHeader" nodekey="CompanyHeader" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:revision">Revision</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_proforma_invoice:revision" validate="{empty:false}" lablename="Revision" nodekey="Revision" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:quoteno">Quote No</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_proforma_invoice:quoteno" isflag="tableflag" validate="{maxlength:2000}" lablename="Quote No" /></span><span style="display:inline-block" name="editable-input"><a class="extend remoteupload" href="javascript:;" dialog="{name:&#39;quotation&#39;,fields:[{src:&#39;F_INQUIRYNO&#39;,target:&#39;inquiryno&#39;},{src:&#39;F_QUOTATIONNO&#39;,target:&#39;quoteno&#39;},{src:&#39;F_CUSTOMERS&#39;,target:&#39;companyname&#39;},{src:&#39;F_PAYMENTTERMS&#39;,target:&#39;paymentterm&#39;},{src:&#39;F_SUBTOTAL&#39;,target:&#39;subtotal&#39;},{src:&#39;F_DISCOUNT&#39;,target:&#39;discount&#39;},{src:&#39;F_SALESTAX&#39;,target:&#39;salestax&#39;},{src:&#39;F_DOCUMENTCHARGE&#39;,target:&#39;documentcharge&#39;},{src:&#39;F_FREIGHT&#39;,target:&#39;freight&#39;},{src:&#39;F_TOTAL&#39;,target:&#39;total&#39;},{src:&#39;F_CURRENCY&#39;,target:&#39;currency&#39;},{src:&#39;F_REVISION&#39;,target:&#39;revision&#39;},{src:&#39;F_ONBEHALFOF&#39;,target:&#39;&#39;},{src:&#39;F_SHIPPINGTERM&#39;,target:&#39;shippingterm&#39;},{src:&#39;ID&#39;,target:&#39;QuotationID&#39;}],query:[]}">选择</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:inquiryno">Inquiry No</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_proforma_invoice:inquiryno" isflag="tableflag" validate="{maxlength:2000}" lablename="Inquiry No" /></span><span style="display:inline-block" name="editable-input"><a class="extend remoteupload getinquiry" href="javascript:;">查找内容项</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:purchaseorder">Purchase Order</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_proforma_invoice:purchaseorder" isflag="tableflag" validate="{maxlength:2000}" lablename="Purchase Order" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:onbehalf">On Behalf Of</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_proforma_invoice:onbehalfID" lablename="On Behalf OfID" /><input readonly="readonly" name="m:crm_proforma_invoice:onbehalf" validate="{empty:false}" lablename="On Behalf Of" showcuruser="0" /><a class="link user" href="javascript:;" name="m:crm_proforma_invoice:onbehalf" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_proforma_invoice:onbehalf" atype="reset">重置</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:leadtime">Lead Time</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_proforma_invoice:leadtime" isflag="tableflag" validate="{maxlength:2000}" lablename="Lead Time" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:issuedate">Issue Date</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_proforma_invoice:issuedate" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="1" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:reportheader">Report Header</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_proforma_invoice:reportheader" validate="{empty:false}" lablename="Report Header" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="usheader">
+                            空白抬头
+                        </option>
+                        <option value="cnheader">
+                            美国地址
+                        </option>
+                        <option value="zjheader">
+                            工厂地址
+                        </option></select></span>
+            </td>
+            <td class="formTitle" style="width:35%">
+            </td>
+            <td class="formInput" style="width:35%">
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Customers Info
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:companyname">Company Name</span>:
+            </td>
+            <td class="formInput" colspan="3">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_proforma_invoice:companyname" isflag="tableflag" validate="{maxlength:2000}" lablename="Company Name" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:shipto">Ship To</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_proforma_invoice:shipto" isflag="tableflag" validate="{maxlength:2000}" lablename="Ship To" /></span><span style="display:inline-block" name="editable-input"><a class="extend remoteupload" href="javascript:;" dialog="{name:&#39;customercontact&#39;,fields:[{src:&#39;F_COMPANYNAME&#39;,target:&#39;shiptocompany&#39;},{src:&#39;F_FULLNAME&#39;,target:&#39;shipto&#39;},{src:&#39;CONTACTID&#39;,target:&#39;shiptoid&#39;},{src:&#39;F_ADDRESS&#39;,target:&#39;shiptoaddress&#39;},{src:&#39;F_CITY&#39;,target:&#39;shiptocity&#39;},{src:&#39;F_STATEPROVINCE&#39;,target:&#39;shiptostateprovince&#39;},{src:&#39;F_ZIPPOSTALCODE&#39;,target:&#39;shiptozip&#39;},{src:&#39;F_COUNTRYREGION&#39;,target:&#39;shiptocountry&#39;},{src:&#39;F_FAXNUMBER&#39;,target:&#39;shiptofaxnumber&#39;},{src:&#39;F_WORKPHONE&#39;,target:&#39;shiptoworkphone&#39;},{src:&#39;F_JOBTITLE&#39;,target:&#39;shiptojobtitle&#39;}],query:[]}">选择联系人</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:invoiceto">Invoice To</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_proforma_invoice:invoiceto" isflag="tableflag" validate="{maxlength:2000}" lablename="Invoice To" /></span><span style="display:inline-block" name="editable-input"><a class="extend remoteupload" href="javascript:;" dialog="{name:&#39;customercontact&#39;,fields:[{src:&#39;F_COMPANYNAME&#39;,target:&#39;invoicecompany&#39;},{src:&#39;F_FULLNAME&#39;,target:&#39;invoiceto&#39;},{src:&#39;CONTACTID&#39;,target:&#39;invoicetoid&#39;},{src:&#39;F_ADDRESS&#39;,target:&#39;invoiceaddress&#39;},{src:&#39;F_CITY&#39;,target:&#39;invoicecity&#39;},{src:&#39;F_STATEPROVINCE&#39;,target:&#39;invoicestateprovince&#39;},{src:&#39;F_ZIPPOSTALCODE&#39;,target:&#39;invoicetozip&#39;},{src:&#39;F_COUNTRYREGION&#39;,target:&#39;invoicecountry&#39;},{src:&#39;F_FAXNUMBER&#39;,target:&#39;invoicefaxnumber&#39;},{src:&#39;F_WORKPHONE&#39;,target:&#39;invoiceworkphone&#39;},{src:&#39;F_JOBTITLE&#39;,target:&#39;invoicejobtitle&#39;}],query:[]}">选择联系人</a></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:paymentmethod">Payment Method</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_proforma_invoice:paymentmethod" validate="{empty:false}" lablename="Payment Method" nodekey="PaymentMethod" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:shippingmethod">Shipping Method</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_proforma_invoice:shippingmethod" validate="{empty:false}" lablename="Shipping Method" nodekey="shipping_method" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:paymentterm">Payment Term</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_proforma_invoice:paymentterm" />
+                    <div id="paymentterm" class="tinyselectcontext" data-text="m:crm_proforma_invoice:paymentterm" data-hidden="m:crm_proforma_invoice:paymentterm">
+                    </div>
+                </div>
+
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:shippingterm">Shipping Term</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_proforma_invoice:shippingterm" />
+                    <div id="shippingterm" class="tinyselectcontext" data-text="m:crm_proforma_invoice:shippingterm" data-hidden="m:crm_proforma_invoice:shippingterm">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Invoice Summary
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:currency">Currency</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_proforma_invoice:currency" validate="{empty:false}" lablename="Currency" nodekey="Currency" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:discount">Discount</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_proforma_invoice:discount" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:documentcharge">Document Charge</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_proforma_invoice:documentcharge" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:freight">Freight</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_proforma_invoice:freight" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:salestax">Sales Tax</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_proforma_invoice:salestax" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:subtotal">Subtotal</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_proforma_invoice:subtotal" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:total">Total</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_proforma_invoice:total" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%">
+            </td>
+            <td class="formInput" style="width:35%">
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" style="word-break:break-all" colspan="4">
+                Others
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:comments">Comments</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea name="m:crm_proforma_invoice:comments" validate="{empty:false}"></textarea>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:Year">Year</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_proforma_invoice:Year" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:Month">Month</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_proforma_invoice:Month" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_proforma_invoice:creator">Creator</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="hidden" type="hidden" name="m:crm_proforma_invoice:creatorID" lablename="On Behalf OfID" /><input readonly="readonly" name="m:crm_proforma_invoice:creator" validate="{empty:false}" lablename="On Behalf Of" showcuruser="0" /><a class="link user" href="javascript:;" name="m:crm_proforma_invoice:creator" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_proforma_invoice:creator" atype="reset">重置</a><input type="hidden" name="m:crm_proforma_invoice:shiptoid" validate="{}" lablename="shiptoid" /><input type="hidden" name="m:crm_proforma_invoice:invoicetoid" validate="{}" lablename="invoicetoid" /><input type="hidden" name="m:crm_proforma_invoice:shiptocompany" validate="{}" lablename="shiptocompany" /><input type="hidden" name="m:crm_proforma_invoice:shiptoworkphone" validate="{}" lablename="shiptoworkphone" /><input type="hidden" name="m:crm_proforma_invoice:shiptofaxnumber" validate="{}" lablename="shiptofaxnumber" /><input type="hidden" name="m:crm_proforma_invoice:shiptoaddress" validate="{}" lablename="shiptoaddress" /><input type="hidden" name="m:crm_proforma_invoice:shiptocity" validate="{}" lablename="shiptocity" /><input type="hidden" name="m:crm_proforma_invoice:shiptostateprovince" validate="{}" lablename="shiptostateprovince" /><input type="hidden" name="m:crm_proforma_invoice:shiptocountry" validate="{}" lablename="shiptocountry" /><input type="hidden" name="m:crm_proforma_invoice:invoicecompany" validate="{}" lablename="invoicecompany" /><input type="hidden" name="m:crm_proforma_invoice:invoiceworkphone" validate="{}" lablename="invoiceworkphone" /><input type="hidden" name="m:crm_proforma_invoice:invoicefaxnumber" validate="{}" lablename="invoicefaxnumber" /><input type="hidden" name="m:crm_proforma_invoice:invoiceaddress" validate="{}" lablename="invoiceaddress" /><input type="hidden" name="m:crm_proforma_invoice:invoicecity" validate="{}" lablename="invoicecity" /><input type="hidden" name="m:crm_proforma_invoice:invoicestateprovince" validate="{}" lablename="invoicestateprovince" /><input type="hidden" name="m:crm_proforma_invoice:invoicecountry" validate="{}" lablename="invoicecountry" /><input type="hidden" name="m:crm_proforma_invoice:shiptojobtitle" validate="{}" lablename="shiptojobtitle" /><input type="hidden" name="m:crm_proforma_invoice:invoicejobtitle" validate="{}" lablename="invoicejobtitle" /><input type="hidden" name="m:crm_proforma_invoice:QuotationID" validate="{}" lablename="QuotationID" /><input type="hidden" name="m:crm_proforma_invoice:shiptozip" validate="{}" lablename="shiptozip" /><input type="hidden" name="m:crm_proforma_invoice:invoicetozip" validate="{}" lablename="invoicetozip" />
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p>
+    <br />
+</p>
+<div type="subtable" tablename="crm_proforma_items">
+    <br />
+    <div class="subTableToolBar l-tab-links">
+        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a>
+    </div>
+    <table class="listTable" uetable="null">
+        <tbody>
+            <tr>
+                <td class="formHead" colspan="9">
+                    Proforma Items
+                </td>
+            </tr>
+            <tr class="headRow">
+                <th>
+                    <span i18nkey="s:crm_proforma_items:modelnumber">Model Number</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_proforma_items:itemno">Item No</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_proforma_items:qty">Qty</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_proforma_items:tagcode">Tag/Code</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_proforma_items:unitprice">Unit Price</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_proforma_items:linetotal">Line Total</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_proforma_items:descviewtype">Description View Type</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_proforma_items:fulldescription">Full Description</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_proforma_items:linedescription">Line Description</span>
+                </th>
+            </tr>
+            <tr class="listRow" formtype="edit">
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="s:crm_proforma_items:modelnumber" isflag="tableflag" validate="{maxlength:50}" lablename="Model Number" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="s:crm_proforma_items:itemno" isflag="tableflag" validate="{maxlength:2000}" lablename="Item No" /></span>
+                </td>
+                <td>
+                    <input name="s:crm_proforma_items:qty" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="s:crm_proforma_items:tagcode" isflag="tableflag" validate="{maxlength:2000}" lablename="Tag/Code" /></span>
+                </td>
+                <td>
+                    <input name="s:crm_proforma_items:unitprice" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input name="s:crm_proforma_items:linetotal" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="s:crm_proforma_items:descviewtype" validate="{empty:false}" lablename="Description View Type" controltype="select">
+                            <option selected="selected" value="Full Desc">
+                                Full Desc
+                            </option>
+                            <option value="Line Desc">
+                                Line Desc
+                            </option></select></span>
+                </td>
+                <td>
+                    <textarea name="s:crm_proforma_items:fulldescription" validate="{empty:false}"></textarea>
+                </td>
+                <td>
+                    <textarea name="s:crm_proforma_items:linedescription" validate="{empty:false}"></textarea><input type="hidden" name="s:crm_proforma_items:InquiryID" isflag="tableflag" validate="{}" /><input type="hidden" name="s:crm_proforma_items:QuoteID" isflag="tableflag" validate="{}" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,949 @@
+<p>
+    <br />
+</p><script type="text/javascript">
+$(function() {
+    getInquiryList();
+	getshippingtermList();
+	getpaymenttermList();
+	if($(":text[name='m\\:crm_quotation\\:QuoteDate']")){
+		var quotedate = $(":text[name='m\\:crm_quotation\\:QuoteDate']").val();
+		var date = new Date(quotedate.replace(/-/g,"/"));
+		$(":text[name='m\\:crm_quotation\\:QuoteYear']").val(date.getFullYear());
+		$(":text[name='m\\:crm_quotation\\:QuoteMonth']").val(date.getMonth()+1);
+	}
+    $("table.listTable").find(":text:visible").bind("paste",function(e) {
+        excelPaste(e);
+    });
+	$("table.listTable").delegate(":text:visible","keydown",function(e){
+		excelKeydown(e);
+	});
+	$("a.getinquiry").click(function(){
+		if($("table.formTable").find(":text[name='m\\:crm_quotation\\:inquiryno']").val()!=""){
+			getInquiry($("table.formTable").find(":hidden[name='m\\:crm_quotation\\:inquirynoid']").val());
+		}
+	});
+	$(":text[name='m\\:crm_quotation\\:Discount']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+	$(":text[name='m\\:crm_quotation\\:SalesTax']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+	$(":text[name='m\\:crm_quotation\\:DocumentCharge']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+	$(":text[name='m\\:crm_quotation\\:Freight']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+    var less = $('link[rel="stylesheet/less"]');
+    if (!less.length) {
+        return;
+    }
+    var lessfile = less.filter('[data-code=true]');
+    if (!lessfile.length) {
+        loadLessjs();
+        return;
+    }
+});
+function loadLessjs() {
+    $.getScript('/ecms/js/tinyselect/lib/less.min.js');
+}
+function sumsubtotal(e){
+	var subtotal = 0.0;
+	var srcEle = e.originalEvent.srcElement;
+	$.each($("table.listTable").find(":text[name='s\\:crm_quote_items\\:LineTotal'],textarea[name='s\\:crm_quote_items\\:LineTotal']"),function(i,item){
+		subtotal = (subtotal*100+$(item).val()*100)/100;
+	});
+	if($(":text[name='m\\:crm_quotation\\:Discount']").val()!=""){
+		subtotal += parseFloat($(":text[name='m\\:crm_quotation\\:Discount']").val().split(',').join(""));
+	}
+	if($(":text[name='m\\:crm_quotation\\:SalesTax']").val()!=""){
+		subtotal += parseFloat($(":text[name='m\\:crm_quotation\\:SalesTax']").val().split(',').join(""));
+	}
+	if($(":text[name='m\\:crm_quotation\\:DocumentCharge']").val()!=""){
+		subtotal += parseFloat($(":text[name='m\\:crm_quotation\\:DocumentCharge']").val().split(',').join(""));
+	}
+	if($(":text[name='m\\:crm_quotation\\:Freight']").val()!=""){
+		subtotal += parseFloat($(":text[name='m\\:crm_quotation\\:Freight']").val().split(',').join(""));
+	}
+	$(":text[name='m\\:crm_quotation\\:Total']").val(subtotal);
+}
+function getInquiryList(){
+    var url = "/ecms/commons/fulldescajax.jsp";
+    var il = new Array();
+    $.post(url,{f:"getinquirylist"},function(data){
+        var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+        $.each(jsondata, function (i, item) {
+            il.push({ "id": item.ID, "text": item.F_XDH });
+        });
+        var inquiryselect = TinySelect("div#inquiryno", {
+            item: {
+                data: il,
+                value:$(":hidden[name='m\\:crm_quotation\\:inquirynoid']").val().length>0?$(":hidden[name='m\\:crm_quotation\\:inquirynoid']").val().split(','):null
+            },
+            result: {
+                multi: true
+            }
+        });
+    },"json");
+}
+
+function getshippingtermList(){
+    var url = "/ecms/commons/fulldescajax.jsp";
+    var il = new Array();
+    $.post(url,{f:"getshippingtermlist"},function(data){
+        var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+        $.each(jsondata, function (i, item) {
+            il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
+        });
+        var inquiryselect = TinySelect("div#shippingterm", {
+            item: {
+                data: il,
+                value:$(":hidden[name='m\\:crm_quotation\\:shippingterm']").val().length>0?$(":hidden[name='m\\:crm_quotation\\:shippingterm']").val().split(','):null
+            },
+            result: {
+                multi: false
+            }
+        });
+    },"json");
+}
+
+function getpaymenttermList(){
+    var url = "/ecms/commons/fulldescajax.jsp";
+    var il = new Array();
+    $.post(url,{f:"getpaymenttermlist"},function(data){
+        var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+        $.each(jsondata, function (i, item) {
+            il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
+        });
+        var inquiryselect = TinySelect("div#paymentterm", {
+            item: {
+                data: il,
+                value:$(":hidden[name='m\\:crm_quotation\\:PaymentTerms']").val().length>0?$(":hidden[name='m\\:crm_quotation\\:PaymentTerms']").val().split(','):null
+            },
+            result: {
+                multi: false
+            }
+        });
+    },"json");
+}
+function InquiryContains(inqiryList,inputList){
+	var inputids = new Array(),inquiryids = new Array();
+	$.each(inputList,function(i,item){
+		inputids.push($(item).val());
+	});
+	$.each(inqiryList,function(i,item){
+		if($.inArray(item.ID.toString(),inputids)<0){
+			inquiryids.push(item);
+		}
+	});
+	return inquiryids;
+}
+function getInquiry(inquiryno){
+	var rtn="";
+	var url="/ecms/commons/fulldescajax.jsp";
+	if($("table.formTable").find(":hidden[name='m\\:crm_quotation\\:Profit']").val()){
+		var subtotal = 0.0;
+		var profit = parseFloat($("table.formTable").find(":hidden[name='m\\:crm_quotation\\:Profit']").val());
+		var exchanges = gethl($("table.formTable").find(":text[name='m\\:crm_quotation\\:Currency']").val());
+        
+		$.post(url,{f:'getinquiry_inquirynoids',inquiryno:inquiryno},function(data){
+			var jsondata = typeof(data)=='string'?$.parseJSON(data):data;
+			var returnValve = '';
+			var tableObj = $("table.listTable");
+            var notexistarray = InquiryContains(jsondata,$(tableObj).find(":hidden[name='s\\:crm_quote_items\\:InquiryID']"));
+			var existrecordnum = jsondata.length-notexistarray.length;
+			var trIndex = $(tableObj).find("tr:last").index();
+			var tdIndex = $(tableObj).find("tr:last").closest("td").index();
+
+			$.each(notexistarray, function (i, item) {
+				if(item.F_CPBM){
+					trplus = 0
+					if(trIndex>=2){
+						trplus = i+1;
+					}else{
+						trplus = i;
+					}
+                    if (!$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")")[0]) {
+                        CustomForm.add($(tableObj).closest("div[type=subtable]"));
+                    }
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:InquiryID'],:hidden[name='s\\:crm_quote_items\\:InquiryID'],textarea[name='s\\:crm_quote_items\\:InquiryID']").val(item.ID);
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:ItemNo'],textarea[name='s\\:crm_quote_items\\:ItemNo']").val(item.F_XCH);
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:ModelNumber'],textarea[name='s\\:crm_quote_items\\:ModelNumber']").val(item.F_CPBM);
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:qtxx'],textarea[name='s\\:crm_quote_items\\:qtxx']").val(item.F_QTXX);
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:addinfo'],textarea[name='s\\:crm_quote_items\\:addinfo']").val(item.F_ADDINFO);
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:deviations'],textarea[name='s\\:crm_quote_items\\:deviations']").val(item.F_DEVIATIONS);
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:Qty'],textarea[name='s\\:crm_quote_items\\:Qty']").val(item.F_SL);
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:QuotedPrice'],textarea[name='s\\:crm_quote_items\\:QuotedPrice']").val(item.F_BJ);
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:Profit'],textarea[name='s\\:crm_quote_items\\:Profit']").val(profit);
+                    if($("table.formTable").find(":text[name='m\\:crm_quotation\\:Currency']").val()!=""){
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:Currency'],textarea[name='s\\:crm_quote_items\\:Currency']").val($("table.formTable").find(":text[name='m\\:crm_quotation\\:Currency']").val());
+                    }else{
+                        $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:Currency'],textarea[name='s\\:crm_quote_items\\:Currency']").val("USD");
+                    }
+                    //var profit = parseFloat($(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:Profit'],textarea[name='s\\:crm_quote_items\\:Profit']").val());
+                    var exch = gethl($(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:Currency'],textarea[name='s\\:crm_quote_items\\:Currency']").val(),$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:Exchange'],textarea[name='s\\:crm_quote_items\\:Exchange']"));
+                    exch = parseFloat($(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:Exchange'],textarea[name='s\\:crm_quote_items\\:Exchange']").val());
+                    var bj = parseFloat($(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:QuotedPrice'],textarea[name='s\\:crm_quote_items\\:QuotedPrice']").val());
+                    var up = bj/(exch*(1-profit));
+                    up = Math.round(up*100)/100;
+                    var sl = parseFloat($(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:Qty'],textarea[name='s\\:crm_quote_items\\:Qty']").val());
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:UnitPrice'],textarea[name='s\\:crm_quote_items\\:UnitPrice']").val(up.toFixed(2));
+                    $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:LineTotal'],textarea[name='s\\:crm_quote_items\\:LineTotal']").val(up*sl);
+                    subtotal = (subtotal*100+up*sl*100)/100;
+                    $("table.formTable").find(":text[name='m\\:crm_quotation\\:Subtotal']").val(subtotal.toFixed(2));
+                    descen($(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:ModelNumber'],textarea[name='s\\:crm_quote_items\\:ModelNumber']").val(),$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:FullDescription'],textarea[name='s\\:crm_quote_items\\:FullDescription']"),$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_quote_items\\:DescriptionLine'],textarea[name='s\\:crm_quote_items\\:DescriptionLine']"));
+				}
+			});
+		},'json');
+	}else{
+		alert("请先选择客户信息.");
+	}
+	
+	return rtn;
+}
+function excelKeydown(e){
+	var subtotal = 0.0;
+	var srcEle = e.originalEvent.srcElement;
+	var trIndex = $(srcEle).closest("tr").index();
+	var tdIndex = $(srcEle).closest("td").index();
+    if (event.keyCode == 38) {
+		$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex - 1) + ")").find("td:eq(" + tdIndex + ")").find(":text:first,textarea:first").focus();
+	} else {
+		if (event.keyCode == 40 || event.keyCode == 13|| event.keyCode == 9) {
+			if(event.keyCode == 40 || event.keyCode == 13){
+				if (!$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex + 1) + ")")[0]) {
+					CustomForm.add($(srcEle).closest("div[type=subtable]"));
+				}
+				$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex + 1) + ")").find("td:eq(" + tdIndex + ")").find(":text:first,textarea:first").focus();
+				}
+			if(event.keyCode == 13 || event.keyCode == 9){
+				descen($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:ModelNumber'],textarea[name='s\\:crm_quote_items\\:ModelNumber']").val(),$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find("td").find(":text[name='s\\:crm_quote_items\\:FullDescription'],textarea[name='s\\:crm_quote_items\\:FullDescription']"),$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find("td").find(":text[name='s\\:crm_quote_items\\:DescriptionLine'],textarea[name='s\\:crm_quote_items\\:DescriptionLine']"));
+				var profit = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:Profit'],textarea[name='s\\:crm_quote_items\\:Profit']").val());
+				var exch = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:Exchange'],textarea[name='s\\:crm_quote_items\\:Exchange']").val());
+				var bj = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:QuotedPrice'],textarea[name='s\\:crm_quote_items\\:QuotedPrice']").val());
+				var up = bj/(exch*(1-profit));
+				var sl = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:Qty'],textarea[name='s\\:crm_quote_items\\:Qty']").val());
+				var minus=0.0,plus = 0.0;
+				if($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:AdjustMinus'],textarea[name='s\\:crm_quote_items\\:AdjustMinus']").val()!=""){
+					minus = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:AdjustMinus'],textarea[name='s\\:crm_quote_items\\:AdjustMinus']").val());
+				}
+				if($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:AdjustPlus'],textarea[name='s\\:crm_quote_items\\:AdjustPlus']").val()!=""){
+					plus = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:AdjustPlus'],textarea[name='s\\:crm_quote_items\\:AdjustPlus']").val());
+				}
+				up = up/(1+minus)/(1-plus);
+				up = Math.round(up*100)/100;
+				$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:UnitPrice'],textarea[name='s\\:crm_quote_items\\:UnitPrice']").val(up.toFixed(2));
+				$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:LineTotal'],textarea[name='s\\:crm_quote_items\\:LineTotal']").val(up*sl);
+				$.each($(srcEle).closest("table.listTable").find(":text[name='s\\:crm_quote_items\\:LineTotal'],textarea[name='s\\:crm_quote_items\\:LineTotal']"),function(i,item){
+                    subtotal = (subtotal*100+$(item).val()*100)/100;
+				});
+				$("table.formTable").find(":text[name='m\\:crm_quotation\\:Subtotal']").val(subtotal);
+			}
+		}
+	}
+}
+function excelPaste(e){
+    var eve = e.originalEvent;
+    var cp = eve.clipboardData;
+    var data = null;
+    var clipboardData = window.clipboardData;
+    if (!clipboardData) {
+        clipboardData = e.originalEvent.clipboardData;
+    }
+    data = clipboardData.getData("Text");
+    readClipboardData(eve.srcElement, data);
+    e.preventDefault();
+}
+function readClipboardData(tdobj, clipData) {
+    var tableObj = $(tdobj).closest("table.listTable");
+    var rows = clipData.split("\n");
+    var trIndex = $(tdobj).closest("tr").index();
+    var tdIndex = $(tdobj).closest("td").index();
+    var cols;
+    if (rows.length > 1) {
+        for (var i = 0; i < rows.length - 1; i++) {
+                cols = rows[i].split("\t");
+                for (var j = 0; j <= cols.length - 1; j++) {
+                    if($(tableObj).find("tr:eq("+(trIndex+i)+")")[0]){
+                        $(tableObj).find("tr:eq("+(trIndex+i)+")").find("td:eq("+(tdIndex+j)+")").find(":input:first").val(cols[j]);
+                    }else{
+                        CustomForm.add($("div[type=subtable]:first"));
+                        $(tableObj).find("tr:eq("+(trIndex+i)+")").find("td:eq("+(tdIndex+j)+")").find(":input:first").val(cols[j]);
+                    }
+                }
+                descen($(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_quote_items\\:ModelNumber'],textarea[name='s\\:crm_quote_items\\:ModelNumber']").val(),$(tableObj).find("tr:eq(" + (trIndex + i) + ")").find("td").find(":text[name='s\\:crm_quote_items\\:FullDescription'],textarea[name='s\\:crm_quote_items\\:FullDescription']"),$(tableObj).find("tr:eq(" + (trIndex + i) + ")").find("td").find(":text[name='s\\:crm_quote_items\\:DescriptionLine'],textarea[name='s\\:crm_quote_items\\:DescriptionLine']"));
+        }
+    } else {
+        $(tdobj).val(clipData);
+    }
+};
+function descen(modelnumber,entextbox,cntextbox){
+    var descstr = getdesc(modelnumber,entextbox,cntextbox);
+    /*
+    encode1("A",modelnumber.substr(0,2),entextbox,"@{ValveSize}@");
+    encode1("B",modelnumber.substr(2,2),entextbox,"@{ValveType}@");
+    encode1("C",modelnumber.substr(4,1),entextbox,"@{Rating}@");
+    encode1("D",modelnumber.substr(5,1),entextbox,"@{Connection}@");
+    encode1("E",modelnumber.substr(2,2)+modelnumber.substr(6,1),entextbox,"@{Construction}@");
+    encode1("F",modelnumber.substr(7,2),entextbox,"@{BodyMaterial}@");
+    encode1("G",modelnumber.substr(2,2)+modelnumber.substr(9,2),entextbox,"@{Trim}@");
+    encode1("H",modelnumber.substr(2,2)+modelnumber.substr(11,1),entextbox,"@{Seat}@");
+    encode1("I",modelnumber.substr(12,1),entextbox,"@{ORing}@");
+    encode1("J",modelnumber.substr(13,1),entextbox,"@{Operation}@");
+    encodeTrim("G",modelnumber.substr(2,2)+modelnumber.substr(9,2),entextbox,"@{SeatSurface}@",1);
+    encodeTrim("G",modelnumber.substr(2,2)+modelnumber.substr(9,2),entextbox,"@{DiscSurface}@",0);
+    encodeTrim("G",modelnumber.substr(2,2)+modelnumber.substr(9,2),entextbox,"@{Stem}@",2);
+	
+    encode1("A",modelnumber.substr(0,2),cntextbox,"@{ValveSize}@");
+    encode1("B",modelnumber.substr(2,2),cntextbox,"@{ValveType}@");
+    encode1("C",modelnumber.substr(4,1),cntextbox,"@{Rating}@");
+    encode1("D",modelnumber.substr(5,1),cntextbox,"@{Connection}@");
+    encode1("E",modelnumber.substr(2,2)+modelnumber.substr(6,1),cntextbox,"@{Construction}@");
+    encode1("F",modelnumber.substr(7,2),cntextbox,"@{BodyMaterial}@");
+    encode1("G",modelnumber.substr(2,2)+modelnumber.substr(9,2),cntextbox,"@{Trim}@");
+    encode1("H",modelnumber.substr(2,2)+modelnumber.substr(11,1),cntextbox,"@{Seat}@");
+    encode1("I",modelnumber.substr(12,1),cntextbox,"@{ORing}@");
+    encode1("J",modelnumber.substr(13,1),cntextbox,"@{Operation}@");
+    encodeTrim("G",modelnumber.substr(2,2)+modelnumber.substr(9,2),cntextbox,"@{SeatSurface}@",1);
+    encodeTrim("G",modelnumber.substr(2,2)+modelnumber.substr(9,2),cntextbox,"@{DiscSurface}@",0);
+    encodeTrim("G",modelnumber.substr(2,2)+modelnumber.substr(9,2),cntextbox,"@{Stem}@",2);
+    */
+}
+function getdesc(modelnumber,entextbox,cntextbox){
+    var rtn ="";
+    var url = "/ecms/commons/fulldescajax.jsp";
+    /*
+    $.ajaxSetup({
+        async: false
+    });
+    */
+    $.post(url,{f:'getdescen',modelnumber:modelnumber},function(data){
+        if(data){
+            var jsondata = typeof(data)=='string'?$.parseJSON(data):data;
+            var endesc = jsondata[0].replace("@{ModelNumber}@",modelnumber);
+            var linedesc = jsondata[2].replace("@{ModelNumber}@",modelnumber);;
+            if($(entextbox)!=null){
+                if($(entextbox).closest("tr").find(":text[name='s\\:crm_quote_items\\:addinfo'],textarea[name='s\\:crm_quote_items\\:addinfo']").val()!=""){
+                    endesc = endesc.replace("@{addinfos}@",$(entextbox).closest("tr").find(":text[name='s\\:crm_quote_items\\:addinfo'],textarea[name='s\\:crm_quote_items\\:addinfo']").val());
+                }else{
+                    endesc = endesc.replace("@{addinfos}@","NONE");
+                }
+                if($(entextbox).closest("tr").find(":text[name='s\\:crm_quote_items\\:deviations'],textarea[name='s\\:crm_quote_items\\:deviations']").val()!=""){
+                    endesc = endesc.replace("@{deviations}@",$(entextbox).closest("tr").find(":text[name='s\\:crm_quote_items\\:deviations'],textarea[name='s\\:crm_quote_items\\:deviations']").val());
+                }else{
+                    endesc = endesc.replace("@{deviations}@","NONE");
+                }
+				$(entextbox).val(endesc);
+            }
+			if($(cntextbox)!=null){
+                if($(cntextbox).closest("tr").find(":text[name='s\\:crm_quote_items\\:addinfo'],textarea[name='s\\:crm_quote_items\\:addinfo']").val()!=""){
+                    linedesc = linedesc.replace("@{addinfos}@",$(cntextbox).closest("tr").find(":text[name='s\\:crm_quote_items\\:addinfo'],textarea[name='s\\:crm_quote_items\\:addinfo']").val());
+                }else{
+                    linedesc = linedesc.replace("@{addinfos}@","NONE");
+                }
+                if($(cntextbox).closest("tr").find(":text[name='s\\:crm_quote_items\\:deviations'],textarea[name='s\\:crm_quote_items\\:deviations']").val()!=""){
+                    linedesc = linedesc.replace("@{deviations}@",$(cntextbox).closest("tr").find(":text[name='s\\:crm_quote_items\\:deviations'],textarea[name='s\\:crm_quote_items\\:deviations']").val());
+                }else{
+                    linedesc = linedesc.replace("@{deviations}@","NONE");
+                }
+				$(cntextbox).val(linedesc);
+            }
+            return false;
+        }
+    },'json');
+    return rtn;
+}
+
+function cncode1(bmlx,xxsz,textbox,replacestr){
+    var rtn="";
+    var url = "/ecms/commons/fulldescajax.jsp";
+    /*
+    $.ajaxSetup({
+        async: false
+    });
+    */
+    $.post(url,{f:'getmodeldesc_bmlx',bmlx:bmlx,xxsz:xxsz},function(data){
+        var jsondata = typeof(data)=='string'?$.parseJSON(data):data;
+        var returnValve = '';
+        $.each(jsondata, function (i, item) {
+            if(item.F_XXYW&&$(textbox)){
+                var str = $(textbox).val();
+				if(replacestr!=""){
+                	str = str.replace(replacestr,item.F_XXZW);
+				}else{
+					str=item.F_XXZW;
+				}
+				$(textbox).val(str);
+                return false;
+            }
+        });
+    },'json');
+    return rtn;
+}
+function cncodeTrim(bmlx,xxsz,textbox,replacestr,trimindex){
+    var rtn="";
+    var url = "/ecms/commons/fulldescajax.jsp";
+    /*
+    $.ajaxSetup({
+        async: false
+    });
+    */
+    $.post(url,{f:'getmodeldesc_bmlx',bmlx:bmlx,xxsz:xxsz},function(data){
+        var jsondata = typeof(data)=='string'?$.parseJSON(data):data;
+        var returnValve = '';
+        $.each(jsondata, function (i, item) {
+            if(item.F_XXZW&&$(textbox)){
+                var str = $(textbox).val();
+                str = str.replace(replacestr,item.F_XXZW[trimindex]);
+                $(textbox).val(str);
+                
+                return false;
+            }
+        });
+    },'json');
+    return rtn;
+}
+function encode1(bmlx,xxsz,textbox,replacestr){
+    var rtn="";
+    var url = "/ecms/commons/fulldescajax.jsp";
+    /*
+    $.ajaxSetup({
+        async: false
+    });
+    */
+    $.post(url,{f:'getmodeldesc_bmlx',bmlx:bmlx,xxsz:xxsz},function(data){
+        var jsondata = typeof(data)=='string'?$.parseJSON(data):data;
+        var returnValve = '';
+        $.each(jsondata, function (i, item) {
+            if(item.F_XXYW&&$(textbox)){
+                var str = $(textbox).val();
+                str = str.replace(replacestr,item.F_XXYW);
+                $(textbox).val(str);
+                
+                return false;
+            }
+        });
+    },'json');
+    return rtn;
+}
+function encodeTrim(bmlx,xxsz,textbox,replacestr,trimindex){
+    var rtn="";
+    var url = "/ecms/commons/fulldescajax.jsp";
+    /*
+    $.ajaxSetup({
+        async: false
+    });
+    */
+    $.post(url,{f:'getmodeldesc_bmlx',bmlx:bmlx,xxsz:xxsz},function(data){
+        var jsondata = typeof(data)=='string'?$.parseJSON(data):data;
+        var returnValve = '';
+        $.each(jsondata, function (i, item) {
+            if(item.F_XXYW&&$(textbox)){
+                var str = $(textbox).val();
+                str = str.replace(replacestr,item.F_XXYW[trimindex]);
+                $(textbox).val(str);
+                
+                return false;
+            }
+        });
+    },'json');
+    return rtn;
+}
+function gethl(currencytype,textbox){
+    var rtn="";
+    var url = "/ecms/commons/fulldescajax.jsp";
+	if(currencytype==""){
+		currencytype="USD";
+	}
+    /*
+    $.ajaxSetup({
+        async: false
+    });
+    */
+    $.post(url,{f:'getpriceexch',currencytype:currencytype},function(data){
+        var jsondata = typeof(data)=='string'?$.parseJSON(data):data;
+        $.each(jsondata, function (i, item) {
+            if(item.F_HL){
+				if($(textbox)){
+                	$(textbox).val(item.F_HL);
+					var srcEle = $(textbox);
+					var trIndex = $(srcEle).closest("tr").index();
+					var tdIndex = $(srcEle).closest("td").index();
+					var profit = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:Profit'],textarea[name='s\\:crm_quote_items\\:Profit']").val());
+					var exch = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:Exchange'],textarea[name='s\\:crm_quote_items\\:Exchange']").val());
+					var bj = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:QuotedPrice'],textarea[name='s\\:crm_quote_items\\:QuotedPrice']").val());
+					var up = bj/(exch*(1-profit));
+					var sl = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:Qty'],textarea[name='s\\:crm_quote_items\\:Qty']").val());
+					var minus=0.0,plus = 0.0;
+					if($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:AdjustMinus'],textarea[name='s\\:crm_quote_items\\:AdjustMinus']").val()!=""){
+						minus = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:AdjustMinus'],textarea[name='s\\:crm_quote_items\\:AdjustMinus']").val());
+					}
+					if($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:AdjustPlus'],textarea[name='s\\:crm_quote_items\\:AdjustPlus']").val()!=""){
+						plus = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:AdjustPlus'],textarea[name='s\\:crm_quote_items\\:AdjustPlus']").val());
+					}
+					up = up/(1+minus)/(1-plus);
+					up = Math.round(up*100)/100;
+					$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:UnitPrice'],textarea[name='s\\:crm_quote_items\\:UnitPrice']").val(up.toFixed(2));
+					$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_quote_items\\:LineTotal'],textarea[name='s\\:crm_quote_items\\:LineTotal']").val(((up*sl*100)/100).toFixed(2));
+					$.each($(srcEle).closest("table.listTable").find(":text[name='s\\:crm_quote_items\\:LineTotal'],textarea[name='s\\:crm_quote_items\\:LineTotal']"),function(i,item){
+						subtotal = (subtotal*100+$(item).val()*100)/100;
+					});
+					$("table.formTable").find(":text[name='m\\:crm_quotation\\:Subtotal']").val(subtotal);                    
+				}
+				rtn = item.F_HL;
+                return false;
+            }
+        });
+    },'json');
+    return rtn;
+}
+</script>
+<table class="formTable" cellspacing="0" cellpadding="2" border="1" uetable="null">
+    <thead>
+        <tr>
+            <th class="formHead" colspan="4">
+                Quotation
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Quote Information
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:Contact">Contact</span>:
+            </td>
+            <td class="formInput" style="width:35%;word-break:break-all">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_quotation:Contact" isflag="tableflag" validate="{maxlength:2000}" lablename="Contact" /></span><span style="display:inline-block" name="editable-input"><a class="extend remoteupload" href="javascript:;" dialog="{name:&#39;customercontact&#39;,fields:[{src:&#39;F_CUSTOMERID&#39;,target:&#39;customerid&#39;},{src:&#39;F_COMPANYNAME&#39;,target:&#39;Customers&#39;},{src:&#39;F_FULLNAME&#39;,target:&#39;Contact&#39;},{src:&#39;F_FINALVALUE&#39;,target:&#39;Profit&#39;},{src:&#39;F_ADDRESS&#39;,target:&#39;address&#39;},{src:&#39;F_CITY&#39;,target:&#39;city&#39;},{src:&#39;F_STATEPROVINCE&#39;,target:&#39;stateprovince&#39;},{src:&#39;F_ZIPPOSTALCODE&#39;,target:&#39;zippostalcode&#39;},{src:&#39;F_COUNTRYREGION&#39;,target:&#39;country&#39;},{src:&#39;F_FAXNUMBER&#39;,target:&#39;faxnumber&#39;},{src:&#39;F_WORKPHONE&#39;,target:&#39;workphone&#39;}],query:[]}">查找联系人</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:Customers">Company Name</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_quotation:Customers" isflag="tableflag" validate="{maxlength:2000}" lablename="Company Name" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:inquiryno">Inquiry No</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_quotation:inquirynoid" /><input type="hidden" name="m:crm_quotation:inquiryno" />
+                    <div id="inquiryno" class="multiple tinyselectcontext" data-text="m:crm_quotation:inquiryno" data-hidden="m:crm_quotation:inquirynoid">
+                    </div>
+                </div><span style="display:inline-block" name="editable-input"><a class="extend script getinquiry" href="javascript:;">添加询单</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:QuotationNo">Quotation No</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_quotation:QuotationNo" isflag="tableflag" validate="{maxlength:2000}" lablename="Quotation No" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:QuotationFor">Quotation For</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_quotation:QuotationFor" validate="{empty:false}" lablename="Quotation For" controltype="select">
+                        <option selected="selected" value="China Sales">
+                            China Sales
+                        </option>
+                        <option value="US Sales">
+                            US Sales
+                        </option></select></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:QuotationHistory">Quotation History</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_quotation:QuotationHistory" validate="{empty:false}" lablename="Quotation History" controltype="select">
+                        <option selected="selected" value="First Quote">
+                            First Quote
+                        </option>
+                        <option value="Repeat Quote">
+                            Repeat Quote
+                        </option>
+                        <option value="Quote for Price List">
+                            Quote for Price List
+                        </option>
+                        <option value="Quote for Reference Only">
+                            Quote for Reference Only
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:LeadTime">Lead Time</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_quotation:LeadTime" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:ValidityPeriod">Validity Period</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_quotation:ValidityPeriod" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:PaymentTerms">Payment Terms</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_quotation:PaymentTerms" />
+                    <div id="paymentterm" class="tinyselectcontext" data-text="m:crm_quotation:PaymentTerms" data-hidden="m:crm_quotation:PaymentTerms">
+                    </div>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:ShippingMethod">Shipping Method</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_quotation:ShippingMethod" validate="{empty:false}" lablename="Shipping Method" nodekey="shipping_method" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:ShippingTerms">Shipping Terms</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_quotation:shippingterm" />
+                    <div id="shippingterm" class="tinyselectcontext" data-text="m:crm_quotation:shippingterm" data-hidden="m:crm_quotation:shippingterm">
+                    </div>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:CustomerRef">Customer Ref</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_quotation:CustomerRef" isflag="tableflag" validate="{maxlength:2000}" lablename="Customer Ref" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:ProjectNo">Project No.</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_quotation:ProjectNo" isflag="tableflag" validate="{maxlength:2000}" lablename="Project No." /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:EndUser">End User</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_quotation:EndUser" isflag="tableflag" validate="{maxlength:2000}" lablename="End User" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:Comments">Comments</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea name="m:crm_quotation:Comments" validate="{empty:false}"></textarea>
+            </td>
+            <td class="formTitle selectTdClass" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:reportheader">Report Header</span>:
+            </td>
+            <td class="formInput selectTdClass" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_quotation:reportheader" validate="{empty:false}" lablename="Report Header" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="usheader">
+                            US Header
+                        </option>
+                        <option value="cnheader">
+                            CN Header
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Cost Breakdown
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:Subtotal">Subtotal</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_quotation:Subtotal" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:true,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:Discount">Discount</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_quotation:Discount" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:true,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:SalesTax">Sales Tax</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_quotation:SalesTax" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:true,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:DocumentCharge">Document Charge</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_quotation:DocumentCharge" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:Freight">Freight</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_quotation:Freight" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:true,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:Total">Total</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_quotation:Total" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:true,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:Currency">Currency</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_quotation:Currency" validate="{empty:false}" lablename="Currency" nodekey="Currency" />
+            </td>
+            <td class="formTitle" style="width:15%">
+            </td>
+            <td class="formInput" style="width:35%">
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Quote History
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:QuoteYear">Quote Year</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_quotation:QuoteYear" isflag="tableflag" validate="{maxlength:2000}" lablename="Quote Year" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:QuoteDate">Quote Date</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_quotation:QuoteDate" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="1" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:QuoteMonth">Quote Month</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_quotation:QuoteMonth" isflag="tableflag" validate="{maxlength:2000}" lablename="Quote Month" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:ApproveStatus">ApproveStatus</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_quotation:ApproveStatus" validate="{empty:false}" lablename="ApproveStatus" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="Pedding">
+                            待审批
+                        </option>
+                        <option value="Approved">
+                            批准
+                        </option>
+                        <option value="Rejected">
+                            批驳
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:ApprovedDate">Approved Date</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_quotation:ApprovedDate" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:OnBehalfOf">On Behalf Of</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_quotation:OnBehalfOfID" lablename="On Behalf OfID" /><input readonly="readonly" name="m:crm_quotation:OnBehalfOf" validate="{empty:false}" lablename="On Behalf Of" showcuruser="0" /><a class="link user" href="javascript:;" name="m:crm_quotation:OnBehalfOf" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_quotation:OnBehalfOf" atype="reset">重置</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:Revision">Revision</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_quotation:Revision" validate="{empty:false}" lablename="Revision" nodekey="Revision" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_quotation:RevisionComments">Revision Comments</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea rows="3" name="m:crm_quotation:RevisionComments" validate="{empty:false}"></textarea><input type="hidden" name="m:crm_quotation:Profit" validate="{}" lablename="Profit" /><input type="hidden" name="m:crm_quotation:QuoteID" validate="{}" lablename="QuoteID" /><input type="hidden" name="m:crm_quotation:customerid" validate="{}" lablename="CustomerID" /><input type="hidden" name="m:crm_quotation:Exchange" validate="{}" lablename="Exchange Rate" /><input type="hidden" name="m:crm_quotation:workphone" validate="{}" lablename="Work Phone" /><input type="hidden" name="m:crm_quotation:faxnumber" validate="{}" lablename="Fax Number" /><input type="hidden" name="m:crm_quotation:address" validate="{}" lablename="Address" /><input type="hidden" name="m:crm_quotation:city" validate="{}" lablename="City" /><input type="hidden" name="m:crm_quotation:stateprovince" validate="{}" lablename="State Province" /><input type="hidden" name="m:crm_quotation:zippostalcode" validate="{}" lablename="Zip Postal Code" /><input type="hidden" name="m:crm_quotation:country" validate="{}" lablename="Country" />
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p>
+    <br />
+</p>
+<div type="subtable" tablename="crm_quote_items">
+    <br />
+    <div class="subTableToolBar l-tab-links">
+        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a>
+    </div>
+    <table class="listTable" uetable="null">
+        <tbody>
+            <tr>
+                <td class="formHead" colspan="15">
+                    Quote Items
+                </td>
+                <td class="formHead">
+                </td>
+                <td class="formHead">
+                </td>
+                <td class="formHead">
+                </td>
+                <td class="formHead">
+                </td>
+            </tr>
+            <tr class="headRow">
+                <th>
+                    <span i18nkey="s:crm_quote_items:ItemNo">Item No</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:ModelNumber">Model Number</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:TagCode">Tag/Code</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:Qty">Qty</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:Currency">Currency</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:QuotedPrice">Quoted Price</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:UnitPrice">Unit Price</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:LineTotal">Line Total</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:AdjustMinus">Unit Price Adjust Minus</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:AdjustPlus">Unit Price Adjust Plus</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:Profit">Profit</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:Exchange">Exchange Rate</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:ExRate">ExRate</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:ViewType">Description View Type</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:FullDescription">Full Description</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:DescriptionLine">Description Line</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:addinfo">AddInfo</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:deviations">Deviations</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_quote_items:qtxx">其他信息</span>
+                </th>
+            </tr>
+            <tr class="listRow" formtype="edit">
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:50px" name="s:crm_quote_items:ItemNo" isflag="tableflag" validate="{maxlength:2000}" lablename="Item No" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:120px" name="s:crm_quote_items:ModelNumber" isflag="tableflag" validate="{maxlength:100}" lablename="Model Number" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:80px" name="s:crm_quote_items:TagCode" isflag="tableflag" validate="{maxlength:2000}" lablename="Tag/Code" /></span>
+                </td>
+                <td>
+                    <input style="width:60px" name="s:crm_quote_items:Qty" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+                </td>
+                <td>
+                    <input class="dicComboTree" style="width:50px" height="200" name="s:crm_quote_items:Currency" validate="{empty:false}" lablename="Currency" nodekey="Currency" />
+                </td>
+                <td>
+                    <input style="width:80px" name="s:crm_quote_items:QuotedPrice" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:80px" name="s:crm_quote_items:UnitPrice" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:100px" name="s:crm_quote_items:LineTotal" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:80px" name="s:crm_quote_items:AdjustMinus" validate="{number:true,maxIntLen:13,maxDecimalLen:5}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:5}" />
+                </td>
+                <td>
+                    <input style="width:80px" name="s:crm_quote_items:AdjustPlus" validate="{number:true,maxIntLen:13,maxDecimalLen:5}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:5}" />
+                </td>
+                <td>
+                    <input style="width:80px" name="s:crm_quote_items:Profit" validate="{number:true,maxIntLen:13,maxDecimalLen:5}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:80px" name="s:crm_quote_items:Exchange" validate="{number:true,maxIntLen:13,maxDecimalLen:5}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:80px" name="s:crm_quote_items:ExRate" validate="{number:true,maxIntLen:13,maxDecimalLen:5}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="s:crm_quote_items:ViewType" validate="{empty:false}" lablename="Description View Type" controltype="select">
+                            <option selected="selected" value="Full Desc">
+                                Full Desc
+                            </option>
+                            <option value="Line Desc">
+                                Line Desc
+                            </option></select></span>
+                </td>
+                <td>
+                    <textarea rows="1" name="s:crm_quote_items:FullDescription" validate="{empty:false}"></textarea>
+                </td>
+                <td>
+                    <textarea rows="1" name="s:crm_quote_items:DescriptionLine" validate="{empty:false}"></textarea>
+                </td>
+                <td>
+                    <textarea rows="1" name="s:crm_quote_items:addinfo" validate="{empty:false}"></textarea>
+                </td>
+                <td>
+                    <textarea rows="1" name="s:crm_quote_items:deviations" validate="{empty:false}"></textarea>
+                </td>
+                <td>
+                    <textarea rows="1" name="s:crm_quote_items:qtxx" validate="{empty:false}"></textarea><input type="hidden" name="s:crm_quote_items:InquiryID" isflag="tableflag" validate="{}" lablename="InquiryID" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

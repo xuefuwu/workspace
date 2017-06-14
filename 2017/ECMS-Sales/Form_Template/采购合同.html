@@ -1,0 +1,780 @@
+<script>
+var url = "/ecms/commons/fulldescajax.jsp";
+var sd = new Array();
+$.post(url, { f: "getstandards" }, function (data) {
+    var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+    $.each(jsondata, function (i, item) {
+        sd.push({ "id": ""+item.ID, "text": item.F_STANDARDNAME + "(" + item.F_YEAR + ")" });
+    });
+    var design = TinySelect("div#designcriteria", {
+        item: {
+            data: sd
+        },
+        result: {
+            multi: true
+        }
+    });
+    design.on('ready',function(){
+        if($(":hidden[name='m\\:crm_purchase\\:designcriteriaid']").length>0){
+            design.value($(":hidden[name='m\\:crm_purchase\\:designcriteriaid']").val().split(','),true);
+        }
+    });
+    var accept = TinySelect("div#acceptancecriteria", {
+        item: {
+            data: sd
+        },
+        result: {
+            multi: true
+        }
+    });
+    accept.on('ready',function(){
+        if($(":hidden[name='m\\:crm_purchase\\:acceptancecriteriaid']").length>0){
+            accept.value($(":hidden[name='m\\:crm_purchase\\:acceptancecriteriaid']").val().split(','),true);
+        }
+    });
+}, "json");
+$.post(url, { f: "getinquiryalllist" }, function (data) {
+    var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+	var rr = new Array();
+    $.each(jsondata, function (i, item) {
+        rr.push({ "id": ""+item.ID, "text": item.F_XDH });
+    });
+    var rrselect = TinySelect("div#inquiryno", {
+        item: {
+            data: rr,
+			value:$(":hidden[name='m\\:crm_purchase\\:inquiryid']").val().length>0?$(":hidden[name='m\\:crm_purchase\\:inquiryid']").val().split(','):null
+        },
+        result: {
+            multi: true
+        }
+    });
+}, "json");
+$.post(url, { f: "getreportrequest" }, function (data) {
+    var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+	var rr = new Array();
+    $.each(jsondata, function (i, item) {
+        rr.push({ "id": item.ID, "text": item.F_BGMC });
+    });
+    var rrselect = TinySelect("div#reportrequest", {
+        item: {
+            data: rr,
+			value:$(":hidden[name='m\\:crm_purchase\\:reportrequestid']").val().length>0?$(":hidden[name='m\\:crm_purchase\\:reportrequestid']").val().split(','):['10000005024732','10000005024754','10000005024839','10000005024926']
+        },
+        result: {
+            multi: true
+        }
+    });
+	
+
+}, "json");
+
+$.post(url, { f: "getsupplierlist" }, function (data) {
+    var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
+	var rr = new Array();
+	$.each(jsondata, function (i, item) {
+        rr.push({ "id": ""+item.F_COMPANYNAME, "text": item.F_COMPANYNAME });
+    });
+    TinySelect("div#supplier", {
+        item: {
+			data: rr,
+			value: $(":hidden[name='m\\:crm_purchase\\:supplier']").val().length>0?$(":hidden[name='m\\:crm_purchase\\:supplier']").val():null
+        }
+    });
+
+}, "json");
+
+
+	
+$(function () {
+	iniItems();
+	$("table.listTable").delegate(":text:visible","keydown",function(e){
+		excelKeydown(e);
+	});
+	$(":text[name='m\\:crm_purchase\\:tax']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+	$(":text[name='m\\:crm_purchase\\:discount']").bind("input propertychange",function(e){
+		sumsubtotal(e);
+	});
+	$("a.getinquiry").click(function(){
+		if($("table.formTable").find(":hidden[name='m\\:crm_purchase\\:inquiryid']").val()!=""){
+			getInquiry($("table.formTable").find(":hidden[name='m\\:crm_purchase\\:inquiryid']").val());
+		}
+	});
+ 	var buyer = TinySelect("div#buyer", {
+        item: {
+            data: [{"id": "温州市荣格贸易有限公司","text": "温州市荣格贸易有限公司"},{"id": "浙江阀毕威阀门有限公司","text": "浙江阀毕威阀门有限公司"}],
+			value: $(":hidden[name='m\\:crm_purchase\\:buyer']").val().length>0?$(":hidden[name='m\\:crm_purchase\\:buyer']").val():"温州市荣格贸易有限公司"
+        }
+    });
+	var prselect = TinySelect("div#photosrequest",{
+		item:{
+			data:[{"id":"毛坯照片","text":"毛坯照片"},
+			{"id":"机加工","text":"机加工"},
+			{"id":"装配","text":"装配"},
+			{"id":"试压","text":"试压"},
+			{"id":"油漆","text":"油漆"},
+			{"id":"包装","text":"包装"},
+			{"id":"成品相片","text":"成品相片"}],
+			value:$(":hidden[name='m\\:crm_purchase\\:photosrequest']").val().length>0?$(":hidden[name='m\\:crm_purchase\\:photosrequest']").val().split(','):"包装"
+		},
+        result: {
+            multi: true
+        }
+	});
+	var less = $('link[rel="stylesheet/less"]');
+    if (!less.length) {
+        return;
+    }
+    var lessfile = less.filter('[data-code=true]');
+    if (!lessfile.length) {
+        loadLessjs();
+        return;
+    }
+});
+
+function InquiryContains(inqiryList,inputList){
+	var inputids = new Array(),inquiryids = new Array();
+	$.each(inputList,function(i,item){
+		inputids.push($(item).val());
+	});
+	$.each(inqiryList,function(i,item){
+		if($.inArray(item.ID.toString(),inputids)<0){
+			inquiryids.push(item);
+		}
+	});
+	return inquiryids;
+}
+function getInquiry(inquiryid){
+	var rtn="";
+	var url="/ecms/commons/fulldescajax.jsp";
+    var subtotal = 0.0;
+    /*
+    $.ajaxSetup({
+        async: false
+    });
+    */
+    $.post(url,{f:'getiqspi_inquirynoids',inquiryno:inquiryid},function(data){
+        var jsondata = typeof(data)=='string'?$.parseJSON(data):data;
+        var returnValve = '';
+        var tableObj = $("table.listTable");
+		var notexistarray = InquiryContains(jsondata,$(tableObj).find(":hidden[name='s\\:crm_purchaseitems\\:inquiryno']"));
+		var existrecordnum = jsondata.length-notexistarray.length;
+			
+        var trIndex = $(tableObj).find("tr:last").index();
+        var tdIndex = $(tableObj).find("tr:last").closest("td").index();
+        $.each(notexistarray, function (i, item) {
+            if(item.F_CPBM){
+				trplus = 0
+				if(trIndex>=2){
+					trplus = i+1;
+				}else{
+					trplus = i;
+				}
+                if (!$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")")[0]) {
+                    CustomForm.add($(tableObj).closest("div[type=subtable]"));
+                }
+                $(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:inquiryno']").val(item.ID);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_purchaseitems\\:itemno']").val(item.F_XCH);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_purchaseitems\\:modelnumber']").val(item.F_CPBM);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_purchaseitems\\:qty']").val(item.F_SL);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_purchaseitems\\:jg']").val(item.F_BJ);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":text[name='s\\:crm_purchaseitems\\:xj']").val(parseFloat(item.F_BJ)*parseFloat(item.F_SL));
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:fmlx']").val(item.F_FMLX);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:cc']").val(item.F_CC);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:yl']").val(item.F_YL);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:lj']").val(item.F_LJ);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:ftcl']").val(item.F_FTCL);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:njcl']").val(item.F_NJCL);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:fzqr']").val(item.F_FZQR);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:Oxq']").val(item.F_OXQ);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:cz']").val(item.F_CZ);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:fmjg']").val(item.F_JG);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find(":hidden[name='s\\:crm_purchaseitems\\:qtxx']").val(item.F_QTXX);
+				$(tableObj).find("tr:eq(" + (trIndex + trplus) + ")").find("textarea[name='s\\:crm_purchaseitems\\:wzms']").val(item.F_ZWMS);
+            }
+        });
+    },'json');	
+	return rtn;
+}
+
+
+function sumsubtotal(e){
+	var subtotal = 0.0,tax=0.0,discount=0.0;
+
+	$.each($("table.listTable").find(":text[name='s\\:crm_purchaseitems\\:shxj'],textarea[name='s\\:crm_purchaseitems\\:shxj']"),function(i,item){
+		subtotal += parseFloat($(item).val());
+	});
+	if($(":text[name='m\\:crm_purchase\\:tax']").val()!=""){
+		tax = parseFloat($(":text[name='m\\:crm_purchase\\:tax']").val().split(',').join(""));
+	}
+	if($(":text[name='m\\:crm_purchase\\:discount']").val()!=""){
+		discount = parseFloat($(":text[name='m\\:crm_purchase\\:discount']").val().split(',').join(""));
+	}
+	$(":text[name='m\\:crm_purchase\\:subtotal']").val(subtotal);
+	var total = Math.round(subtotal*(1+tax)*(1-discount)*100)/100;
+	$(":text[name='m\\:crm_purchase\\:total']").val(total);
+}
+
+function excelKeydown(e){
+	var srcEle = e.originalEvent.srcElement;
+	var trIndex = $(srcEle).closest("tr").index();
+	var tdIndex = $(srcEle).closest("td").index();
+	if (event.keyCode == 38) {
+		$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex - 1) + ")").find("td:eq(" + tdIndex + ")").find(":text:first,textarea:first").focus();
+	} else {
+		if (event.keyCode == 40 || event.keyCode == 13|| event.keyCode == 9) {
+			if(event.keyCode == 40 || event.keyCode == 13){
+			if (!$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex + 1) + ")")[0]) {
+				CustomForm.add($(srcEle).closest("div[type=subtable]"));
+			}
+			$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex + 1) + ")").find("td:eq(" + tdIndex + ")").find(":text:first,textarea:first").focus();
+			}
+			if(event.keyCode == 13|| event.keyCode == 9){
+				//结算该项的小计
+				var jg = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_purchaseitems\\:jg'],textarea[name='s\\:crm_purchaseitems\\:jg']").val());
+				var qty = parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_purchaseitems\\:qty'],textarea[name='s\\:crm_purchaseitems\\:qty']").val());
+				var lineTotal = jg*qty;
+				$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_purchaseitems\\:xj'],textarea[name='s\\:crm_purchaseitems\\:xj']").val(jg*qty);
+				var tax = $(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_purchaseitems\\:sl'],textarea[name='s\\:crm_purchaseitems\\:sl']").val()>0?parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_purchaseitems\\:sl'],textarea[name='s\\:crm_purchaseitems\\:sl']").val()):0;
+				var discount = $(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_purchaseitems\\:zk'],textarea[name='s\\:crm_purchaseitems\\:zk']").val()>0?parseFloat($(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_purchaseitems\\:zk'],textarea[name='s\\:crm_purchaseitems\\:zk']").val()):0;
+				var shdj = Math.round(jg*(1-discount)*(1+tax)*100)/100;
+				$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_purchaseitems\\:shdj'],textarea[name='s\\:crm_purchaseitems\\:shdj']").val(shdj);
+				$(srcEle).closest("table.listTable").find("tr:eq(" + (trIndex) + ")").find(":text[name='s\\:crm_purchaseitems\\:shxj'],textarea[name='s\\:crm_purchaseitems\\:shxj']").val(shdj*qty);
+                sumsubtotal();	
+			}
+		}
+	}
+}
+function iniItems(){
+	var listTable = $("table.listTable");
+	var subtotal = 0.0;
+	$.each(listTable.find("tr.listRow[formtype='newrow']"),function(i,item){
+		var jg = parseFloat($(item).find(":text[name='s\\:crm_purchaseitems\\:jg'],textarea[name='s\\:crm_purchaseitems\\:jg']").val());
+		var qty = parseFloat($(item).find(":text[name='s\\:crm_purchaseitems\\:qty'],textarea[name='s\\:crm_purchaseitems\\:qty']").val());
+		//var lineTotal = jg*qty;
+		//$(item).find(":text[name='s\\:crm_purchaseitems\\:xj'],textarea[name='s\\:crm_purchaseitems\\:xj']").val(jg*qty);
+		var tax = $(item).find(":text[name='s\\:crm_purchaseitems\\:sl'],textarea[name='s\\:crm_purchaseitems\\:sl']").val()>0?parseFloat($(item).find(":text[name='s\\:crm_purchaseitems\\:sl'],textarea[name='s\\:crm_purchaseitems\\:sl']").val()):0;
+		var discount = $(item).find(":text[name='s\\:crm_purchaseitems\\:zk'],textarea[name='s\\:crm_purchaseitems\\:zk']").val()>0?parseFloat($(item).find(":text[name='s\\:crm_purchaseitems\\:zk'],textarea[name='s\\:crm_purchaseitems\\:zk']").val()):0;
+		var shdj = Math.round(jg*(1-discount)*(1+tax)*100)/100;
+		$(item).find(":text[name='s\\:crm_purchaseitems\\:shdj'],textarea[name='s\\:crm_purchaseitems\\:shdj']").val(shdj);
+		$(item).find(":text[name='s\\:crm_purchaseitems\\:shxj'],textarea[name='s\\:crm_purchaseitems\\:shxj']").val(shdj*qty);
+		subtotal+=shdj*qty;
+	});
+	$(":text[name='m\\:crm_purchase\\:subtotal']").val(subtotal);
+}
+function loadLessjs() {
+    $.getScript('/ecms/js/tinyselect/lib/less.min.js');
+}
+</script>
+<p>
+</p>
+<div class="taskopinion" name="editable-input" instanceid="#instanceId#">
+    <input />
+</div>
+<p>
+</p>
+<table class="formTable" style="width:1335px" cellspacing="0" cellpadding="2" border="1" uetable="null">
+    <thead>
+        <tr>
+            <th class="formHead" colspan="4">
+                Purchase Contract
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="teamHead" colspan="4">
+                基本信息
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                合同号:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_purchase:contractno" isflag="tableflag" lablename="合同号" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                询单号:
+            </td>
+            <td class="formInput">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_purchase:inquiryno" /><input type="hidden" name="m:crm_purchase:inquiryid" />
+                    <div id="inquiryno" class="multiple tinyselectcontext" data-hidden="m:crm_purchase:inquiryid" data-text="m:crm_purchase:inquiryno">
+                    </div>
+                </div><a class="extend remoteupload getinquiry" href="javascript:;">查找内容项</a>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                版本号:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_purchase:revision" lablename="版本号" validate="{empty:false}" nodekey="Revision" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                版本备注:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea name="m:crm_purchase:revisionhistory" validate="{empty:false}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                合同月份:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_purchase:month" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&#39;coinValue&#39;:&#39;&#39;,&#39;isShowComdify&#39;:false,&#39;decimalValue&#39;:0}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                合同年份:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_purchase:Year" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&#39;coinValue&#39;:&#39;&#39;,&#39;isShowComdify&#39;:false,&#39;decimalValue&#39;:0}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                发票号:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_purchase:pino" isflag="tableflag" lablename="发票号" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                业务员:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_purchase:salesID" lablename="业务员ID" /><input readonly="readonly" name="m:crm_purchase:sales" lablename="业务员" validate="{empty:false}" showcuruser="0" /><a class="link user" href="javascript:;" name="m:crm_purchase:sales" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_purchase:sales" atype="reset">重置</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_purchase:ddly">订单来源</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_purchase:ddly" lablename="订单来源" validate="{empty:false}" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="cnoffice">
+                            中国
+                        </option>
+                        <option value="usoffice">
+                            美国
+                        </option></select></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_purchase:sfyxd">是否已下单</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_purchase:sfyxd" lablename="是否已下单" validate="{empty:false}" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="yes">
+                            是
+                        </option>
+                        <option value="no">
+                            否
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                基本要求
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                购买人:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_purchase:buyer" isflag="tableflag" lablename="购买人" validate="{maxlength:2000}" />
+                    <div id="buyer" class="tinyselectcontext" data-text="m:crm_purchase:buyer">
+                    </div>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                供货方:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_purchase:supplier" isflag="tableflag" lablename="供货方" validate="{maxlength:2000}" />
+                    <div id="supplier" class="tinyselectcontext" data-text="m:crm_purchase:supplier">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                特殊要求:
+            </td>
+            <td class="formInput" colspan="3">
+                <textarea style="width:100%" name="m:crm_purchase:specialrequests" validate="{empty:false}"></textarea>客户对合同/产品的特殊要求
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                油漆要求:
+            </td>
+            <td class="formInput" style="word-break:break-all" colspan="3">
+                <textarea style="width:100%" name="m:crm_purchase:paintrequirement" validate="{empty:false}"></textarea>
+                <p>
+                    <span style="text-decoration:underline">FBV普通油漆：底漆类型: 环氧云铁底漆≥60微米, 面漆类型: 丙烯酸≥60微米, 面漆颜色: 蓝灰色（RAL 7031） <br />
+                        FBV高温油漆：底漆类型: 无机硅酸锌底漆≥60微米，面漆类型：有机硅耐高温面漆≥60微米，面漆颜色：浅灰色(RAL 7035) <br />
+                        底漆类型：硅树脂≥15µm（当前为昆山虹牌1501），面漆类型：硅树脂≥15微米（当前为昆山虹牌1502），面漆颜色：蓝灰色（RAL 7031） <br />
+                        GBA油漆：底漆类型：环氧树脂≥60微米，面漆类型：美标中银≥60微米，面漆颜色：美标中银（RAL 9006） <br />
+                        Denbury油漆：不锈钢阀门不需要油漆，但驱动、传动装置和碳钢油漆规格如下：</span>
+                </p>
+                <p>
+                    <span style="text-decoration:underline">表面准备应该根据近白金属喷砂标准SSPC-SP-10 , 提供1.5 到3.0Mil的厚度.</span>
+                </p>
+                <p>
+                    <span style="text-decoration:underline">第一层Carboline卡宝拉因893油漆, 油漆程序和干膜厚度根据制造商标准. </span>
+                </p>
+                <p>
+                    <span style="text-decoration:underline">第二层Carboline卡宝拉因134油漆, 油漆程序和干膜厚度根据制造商标准</span>
+                </p>
+                <p>
+                    <span style="text-decoration:underline">面漆C-705浅灰色油漆. <br />
+                        FBV中线蝶阀油漆：环氧树脂静电粉末喷涂 厚度大于200微米，喷涂颜色：蓝灰色（RAL 7031）</span>
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                其他要求:
+            </td>
+            <td class="formInput" colspan="3">
+                <textarea style="width:100%" name="m:crm_purchase:otherrequirements" validate="{empty:false}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%;word-break:break-all" nowrap="nowrap" align="right">
+                设计标准:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_purchase:designcriteriaid" /><input type="hidden" name="m:crm_purchase:designcriteria" />
+                    <div id="designcriteria" class="multiple tinyselectcontext" data-hidden="m:crm_purchase:designcriteriaid" data-text="m:crm_purchase:designcriteria">
+                    </div>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%;word-break:break-all" nowrap="nowrap" align="right">
+                验收标准:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_purchase:acceptancecriteriaid" /><input type="hidden" name="m:crm_purchase:acceptancecriteria" />
+                    <div id="acceptancecriteria" class="multiple tinyselectcontext" data-hidden="m:crm_purchase:acceptancecriteriaid" data-text="m:crm_purchase:acceptancecriteria">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                报告要求:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_purchase:reportrequestid" /><input type="hidden" name="m:crm_purchase:reportrequest" />
+                    <div id="reportrequest" class="multiple tinyselectcontext" data-hidden="m:crm_purchase:reportrequestid" data-text="m:crm_purchase:reportrequest">
+                    </div>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                照片要求:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div class="tinyselectcontext-container">
+                    <input type="hidden" name="m:crm_purchase:photosrequest" isflag="tableflag" lablename="照片要求" validate="{maxlength:2000}" />
+                    <div id="photosrequest" class="multiple tinyselectcontext" data-text="m:crm_purchase:photosrequest">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                其他要求
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                铭牌:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_purchase:nameplate" isflag="tableflag" lablename="铭牌" validate="{maxlength:2000}" /></span>
+                <p>
+                    可供选项: FBV标准，GBA格式，FLOW-TEK格式，客户特殊格式，无
+                </p>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                唛头:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea rows="1" name="m:crm_purchase:shippingmark" validate="{empty:false}"></textarea>
+                <p>
+                    可供选项：FBV标准, 客户特殊要求
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                付款方式:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_purchase:paymentmethod" isflag="tableflag" lablename="付款方式" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                付款期限:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_purchase:paymentperiod" isflag="tableflag" lablename="付款期限" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                包装方式:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_purchase:packagetype" lablename="包装方式" validate="{empty:false}" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="胶合板木箱">
+                            胶合板木箱
+                        </option>
+                        <option value="实木箱">
+                            实木箱
+                        </option>
+                        <option value="熏蒸板箱">
+                            熏蒸板箱
+                        </option></select></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                包装费用:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_purchase:packingcost" lablename="包装费用" validate="{empty:false}" controltype="select">
+                        <option selected="selected" value="供方">
+                            供方
+                        </option>
+                        <option value="购方">
+                            购方
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                运输费用:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_purchase:shippingcost" isflag="tableflag" lablename="运输费用" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                运输方式:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_purchase:shippingmethod" lablename="运输方式" validate="{empty:false}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                交货日期:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_purchase:deliverydate" validate="{empty:false}" displaydate="0" datefmt="yyyy-MM-dd" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                合同签约时间:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_purchase:issueddate" validate="{empty:false}" displaydate="0" datefmt="yyyy-MM-dd" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                检验员:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_purchase:inspector" isflag="tableflag" lablename="检验员" validate="{maxlength:2000}" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+            </td>
+            <td class="formInput" style="width:35%">
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                合同结算
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                货币类型:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_purchase:currency" lablename="货币类型" validate="{empty:false}" nodekey="Currency" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                税率:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_purchase:tax" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&#39;coinValue&#39;:&#39;&#39;,&#39;isShowComdify&#39;:false,&#39;decimalValue&#39;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                折扣:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_purchase:discount" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&#39;coinValue&#39;:&#39;&#39;,&#39;isShowComdify&#39;:false,&#39;decimalValue&#39;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                小计:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_purchase:subtotal" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&#39;coinValue&#39;:&#39;&#39;,&#39;isShowComdify&#39;:false,&#39;decimalValue&#39;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                总计:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_purchase:total" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&#39;coinValue&#39;:&#39;&#39;,&#39;isShowComdify&#39;:false,&#39;decimalValue&#39;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%">
+            </td>
+            <td class="formInput" style="width:35%">
+                <input type="hidden" name="m:crm_purchase:notary" /><input type="hidden" name="m:crm_purchase:notarysignature" /><input type="hidden" name="m:crm_purchase:contractlocation" /><input type="hidden" name="m:crm_purchase:contracttype" /><input type="hidden" name="m:crm_purchase:deliverypoint" /><input type="hidden" name="m:crm_purchase:discrepencytime" /><input type="hidden" name="m:crm_purchase:disputesolution" /><input type="hidden" name="m:crm_purchase:assemblydelay" /><input type="hidden" name="m:crm_purchase:assemblypenalty" /><input type="hidden" name="m:crm_purchase:designdelay" /><input type="hidden" name="m:crm_purchase:designpenalty" /><input type="hidden" name="m:crm_purchase:incomingdelay" /><input type="hidden" name="m:crm_purchase:incomingpenalty" /><input type="hidden" name="m:crm_purchase:delaymax" /><input type="hidden" name="m:crm_purchase:latepayment" /><input type="hidden" name="m:crm_purchase:latepaymentmax" /><input type="hidden" name="m:crm_purchase:liquiddamage" /><input type="hidden" name="m:crm_purchase:liquiddamagemax" /><input type="hidden" name="m:crm_purchase:machiningdelay" /><input type="hidden" name="m:crm_purchase:machiningpenalty" /><input type="hidden" name="m:crm_purchase:mouldingdelay" /><input type="hidden" name="m:crm_purchase:mouldingpenalty" /><input type="hidden" name="m:crm_purchase:packingdelay" /><input type="hidden" name="m:crm_purchase:packingpenalty" /><input type="hidden" name="m:crm_purchase:paintingdelay" /><input type="hidden" name="m:crm_purchase:paintingpenalty" /><input type="hidden" name="m:crm_purchase:supplierviolation" /><input type="hidden" name="m:crm_purchase:testingdelay" /><input type="hidden" name="m:crm_purchase:testingpanalty" /><input type="hidden" name="m:crm_purchase:warrantyperiod" /><input type="hidden" name="m:crm_purchase:QuoteID" /><input type="hidden" name="m:crm_purchase:ProformaID" /><input type="hidden" name="m:crm_purchase:purchaserviolation" /><input type="hidden" name="m:crm_purchase:xdsj" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_purchase:httz">合同图纸</span>:
+            </td>
+            <td class="formInput" style="width:35%" colspan="3">
+                <div name="div_attachment_container">
+                    <div class="attachement">
+                    </div><textarea style="display:none" name="m:crm_purchase:httz" lablename="合同图纸" controltype="attachment"></textarea><a onclick="{AttachMent.addFile(this);}" class="link selectFile" href="javascript:;" validate="{}" atype="select" field="m:crm_purchase:httz">选择</a>
+                </div>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p>
+    <br />
+</p>
+<div type="subtable" tablename="crm_purchaseitems">
+    <br />
+    <div class="subTableToolBar l-tab-links">
+        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a>
+    </div>
+    <table class="listTable" style="width:1335px" uetable="null">
+        <tbody>
+            <tr>
+                <td class="formHead" colspan="15">
+                    PurchaseContractItems
+                </td>
+            </tr>
+            <tr class="headRow">
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:itemno">项次号</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:modelnumber">Model Number</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:qty">数量</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:snstart">序列号开始位</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:snend">序列号结束位</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:snprefix">序列号前缀</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:brand">商标</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:jg">供应商报价</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:xj">小计</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:zk">折扣</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:sl">税率</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:shdj">单价</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:shxj">小计</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:wzms">完整描述</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_purchaseitems:sfspj">是否是配件</span>
+                </th>
+            </tr>
+            <tr class="listRow" formtype="edit">
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:50px" name="s:crm_purchaseitems:itemno" isflag="tableflag" lablename="项次号" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:120px" name="s:crm_purchaseitems:modelnumber" isflag="tableflag" lablename="Model Number" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:50px" name="s:crm_purchaseitems:qty" isflag="tableflag" lablename="数量" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:90px" name="s:crm_purchaseitems:snstart" isflag="tableflag" lablename="序列号开始位" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:90px" name="s:crm_purchaseitems:snend" isflag="tableflag" lablename="序列号结束位" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:50px" name="s:crm_purchaseitems:snprefix" isflag="tableflag" lablename="序列号前缀" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="width:50px" name="s:crm_purchaseitems:brand" isflag="tableflag" lablename="商标" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <input style="width:75px" name="s:crm_purchaseitems:jg" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:75px" name="s:crm_purchaseitems:xj" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:50px" name="s:crm_purchaseitems:zk" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:75px" name="s:crm_purchaseitems:sl" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:75px" name="s:crm_purchaseitems:shdj" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="width:75px" name="s:crm_purchaseitems:shxj" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <textarea style="width:300px" rows="6" name="s:crm_purchaseitems:wzms" validate="{empty:false}"></textarea>
+                </td>
+                <td>
+                    <label><input type="radio" value="是" name="s:crm_purchaseitems:sfspj" lablename="是否是配件" validate="{}" />是</label><label><input type="radio" value="否" name="s:crm_purchaseitems:sfspj" lablename="是否是配件" validate="{}" />否</label><input type="hidden" name="s:crm_purchaseitems:cc" /><input type="hidden" name="s:crm_purchaseitems:yl" /><input type="hidden" name="s:crm_purchaseitems:lj" /><input type="hidden" name="s:crm_purchaseitems:ftcl" /><input type="hidden" name="s:crm_purchaseitems:njcl" /><input type="hidden" name="s:crm_purchaseitems:fzqr" /><input type="hidden" name="s:crm_purchaseitems:Oxq" /><input type="hidden" name="s:crm_purchaseitems:cz" /><input type="hidden" name="s:crm_purchaseitems:qtxx" /><input type="hidden" name="s:crm_purchaseitems:fmlx" /><input type="hidden" name="s:crm_purchaseitems:fmjg" /><input type="hidden" name="s:crm_purchaseitems:inquiryno" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<div ondragstart="return false" onresizestart="return false" id="ue_tableDragLine" onselectstart="return false" contenteditable="false" style="overflow:hidden;border-top:0px;height:1px;border-right:0px;width:5701px;border-bottom:0px;position:absolute;color:blue;left:8px;filter:alpha(opacity=20);border-left:0px;display:block;top:411px;background-color:blue;opacity:.2" unselectable="on">
+</div>

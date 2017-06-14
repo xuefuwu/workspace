@@ -1,0 +1,438 @@
+<p>
+    <br />
+</p>
+<script>
+$(function(){
+    $(":text[name='m\\:crm_rwc\\:xs']").bind("input propertychange",function(e){
+        var rwsy = $(":text[name='m\\:crm_rwc\\:rwbc']");
+        if($(":hidden[name='crm_rwc\\:rwlx_id']").val().length>0){
+            var tasktype = $(":hidden[name='crm_rwc\\:rwlx_id']").val();
+            if(tasktype=="Normal Quotes"){
+                $(rwsy).val(getQuoteValueByItems(parseInt($(this).val())));
+            }else if(tasktype=="Project Quotes"){
+                //$(rwsy).val("250");
+            }else if(tasktype=="General Drawing"){
+                $(rwsy).val(parseInt($(this).val())*10);
+            }else if(tasktype=="Product Inspection"){
+                $(rwsy).val(getInspectionValueByItems(parseInt($(this).val())));
+            }else if(tasktype=="Product Purchasing"){
+                $(rwsy).val(getPurchaseValueByItems(parseInt($(this).val())));
+            }else if(tasktype=="Product Shipping"){
+                $(rwsy).val(getShippingValueByItems(parseInt($(this).val())));
+            }else if(tasktype=="QA Documents"){
+                $(rwsy).val(parseInt($(this).val())*10);
+            }else if(tasktype=="Other"){
+                
+            }
+        }else{
+            alert("请先选择任务类型\r\nPlease Choose Task Type First.");
+        }
+    });
+    if($(":text[name='m\\:crm_rwc\\:rwbc']").val()==""){
+        var rwsy = $(":text[name='m\\:crm_rwc\\:rwbc']");
+        if($(":text[name='m\\:crm_rwc\\:rwlx']").val().length>0){
+            var tasktype = $(":text[name='m\\:crm_rwc\\:rwlx']").val();
+            if(tasktype=="Normal Quotes"){
+                $(rwsy).val(getQuoteValueByItems(parseInt($(":text[name='m\\:crm_rwc\\:xs']").val())));
+            }else if(tasktype=="Project Quotes"){
+                //$(rwsy).val("250");
+            }else if(tasktype=="General Drawing"){
+                $(rwsy).val(parseInt($(":text[name='m\\:crm_rwc\\:xs']").val())*10);
+            }else if(tasktype=="Product Inspection"){
+                $(rwsy).val(getInspectionValueByItems(parseInt($(":text[name='m\\:crm_rwc\\:xs']").val())));
+            }else if(tasktype=="Product Purchasing"){
+                $(rwsy).val(getPurchaseValueByItems(parseInt($(":text[name='m\\:crm_rwc\\:xs']").val())));
+            }else if(tasktype=="Product Shipping"){
+                $(rwsy).val(getShippingValueByItems(parseInt($(":text[name='m\\:crm_rwc\\:xs']").val())));
+            }else if(tasktype=="QA Documents"){
+                $(rwsy).val(parseInt($(":text[name='m\\:crm_rwc\\:xs']").val())*10);
+            }else if(tasktype=="Other"){
+                
+            }
+        }
+    }
+})
+function getQuoteValueByItems(ItemNum){
+    var rtn = 0;
+    if(ItemNum>=1 && ItemNum<=5){
+        rtn = 30;
+    }else if(ItemNum>=6&&ItemNum<=20){
+        rtn = 80;
+    }else if(ItemNum>=21&&ItemNum<=60){
+        rtn = 160;
+    }else if(ItemNum>=61&&ItemNum<=120){
+        rtn = 240;
+    }else if(ItemNum>=121&&ItemNum<=200){
+        rtn = 350;
+    }else if(ItemNum>=201&&ItemNum<=300){
+        rtn = 500;
+    }else if(ItemNum>=301&&ItemNum<=450){
+        rtn = 700;
+    }else if(ItemNum>=451&&ItemNum<=650){
+        rtn = 1000;
+    }else if(ItemNum>=51&&ItemNum<=1000){
+        rtn = 1500;
+    }
+    return rtn;
+}
+function getPurchaseValueByItems(ItemNum){
+    var rtn = 0;
+    if(ItemNum>=1 && ItemNum<=5){
+        rtn = 200;
+    }else if(ItemNum>=6&&ItemNum<=20){
+        rtn = 230;
+    }else if(ItemNum>=21&&ItemNum<=60){
+        rtn = 270;
+    }else if(ItemNum>=61&&ItemNum<=120){
+        rtn = 335;
+    }else if(ItemNum>=121&&ItemNum<=200){
+        rtn = 410;
+    }else if(ItemNum>=201&&ItemNum<=300){
+        rtn = 500;
+    }else if(ItemNum>=301&&ItemNum<=450){
+        rtn = 590;
+    }else if(ItemNum>=451&&ItemNum<=650){
+        rtn = 680;
+    }else if(ItemNum>=51&&ItemNum<=1000){
+        rtn = 800;
+    }
+    return rtn;
+}
+function getInspectionValueByItems(ItemNum){
+    var rtn = 0;
+    if(ItemNum>=1 && ItemNum<=5){
+        rtn = 150;
+    }else if(ItemNum>=6&&ItemNum<=20){
+        rtn = 180;
+    }else if(ItemNum>=21&&ItemNum<=60){
+        rtn = 225;
+    }else if(ItemNum>=61&&ItemNum<=120){
+        rtn = 285;
+    }else if(ItemNum>=121&&ItemNum<=200){
+        rtn = 360;
+    }else if(ItemNum>=201&&ItemNum<=300){
+        rtn = 450;
+    }else if(ItemNum>=301&&ItemNum<=450){
+        rtn = 540;
+    }else if(ItemNum>=451&&ItemNum<=650){
+        rtn = 630;
+    }else if(ItemNum>=51&&ItemNum<=1000){
+        rtn = 750;
+    }
+    return rtn;
+}
+function getShippingValueByItems(ItemNum){
+    var rtn = 0;
+    if(ItemNum>=1 && ItemNum<=5){
+        rtn = 150;
+    }else if(ItemNum>=6&&ItemNum<=20){
+        rtn = 180;
+    }else if(ItemNum>=21&&ItemNum<=60){
+        rtn = 225;
+    }else if(ItemNum>=61&&ItemNum<=120){
+        rtn = 285;
+    }else if(ItemNum>=121&&ItemNum<=200){
+        rtn = 360;
+    }else if(ItemNum>=201&&ItemNum<=300){
+        rtn = 450;
+    }else if(ItemNum>=301&&ItemNum<=450){
+        rtn = 540;
+    }else if(ItemNum>=451&&ItemNum<=650){
+        rtn = 630;
+    }else if(ItemNum>=51&&ItemNum<=1000){
+        rtn = 750;
+    }
+    return rtn;
+}
+</script>
+<table class="formTable" cellspacing="0" cellpadding="2" border="1">
+    <thead>
+        <tr>
+            <th class="formHead" colspan="4">
+                Task Pool
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Publisher Information
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:lsh">ID</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_rwc:lsh" isflag="tableflag" validate="{maxlength:2000}" lablename="ID" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:fbsj">Date</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_rwc:fbsj" validate="{empty:false}" datefmt="yyyy-MM-dd HH:mm:ss" displaydate="1" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:fbr">Issued By</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_rwc:fbrID" lablename="Issued ByID" /><input readonly="readonly" name="m:crm_rwc:fbr" validate="{empty:false}" lablename="Issued By" showcuruser="1" /><a class="link user" href="javascript:;" name="m:crm_rwc:fbr" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_rwc:fbr" atype="reset">重置</a>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:bz">Remark</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea name="m:crm_rwc:bz" validate="{empty:false}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Task Information
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:rwlx">Category</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_rwc:rwlx" validate="{empty:false}" lablename="Category" nodekey="rwlx" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:xs">Total Item NO.</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_rwc:xs" validate="{number:true,maxIntLen:13,maxDecimalLen:0}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:0}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:rwzy">Subject</span>:
+            </td>
+            <td class="formInput" style="width:35%" colspan="3">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="height:21px;width:741px" name="m:crm_rwc:rwzy" isflag="tableflag" validate="{maxlength:2000}" lablename="Subject" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:rwms">Description</span>:
+            </td>
+            <td class="formInput" style="width:35%" colspan="3">
+                <textarea style="height:108px;width:556px" rows="1" cols="1" name="m:crm_rwc:rwms" validate="{empty:false}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:rwyq">Additional Informati</span>:
+            </td>
+            <td class="formInput" style="width:35%" colspan="3">
+                <textarea style="height:89px;width:556px" name="m:crm_rwc:rwyq" validate="{empty:false}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:fbfw">Publish Object</span>:
+            </td>
+            <td class="formInput" style="width:35%" colspan="3">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_rwc:fbfwID" lablename="Publish ObjectID" /><input readonly="readonly" name="m:crm_rwc:fbfw" validate="{empty:false}" lablename="Publish Object" refid="m:crm_rwc:fbfwID" linktype="8" /><a class="link users" href="javascript:;" name="m:crm_rwc:fbfw" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_rwc:fbfw" atype="reset">重置</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:kssj">Start Date</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_rwc:kssj" validate="{empty:false}" datefmt="yyyy-MM-dd HH:mm:ss" displaydate="0" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:jssj">Due Date</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_rwc:jssj" validate="{empty:false}" datefmt="yyyy-MM-dd HH:mm:ss" displaydate="0" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:rwyxq">Validity</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_rwc:rwyxq" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:rwfj">Attachment</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div name="div_attachment_container">
+                    <div class="attachement">
+                    </div><textarea style="display:none" name="m:crm_rwc:rwfj" lablename="Attachment" controltype="attachment"></textarea><a onclick="{AttachMent.directUpLoadFile(this);}" class="link selectFile" href="javascript:;" validate="{}" atype="select" field="m:crm_rwc:rwfj">选择</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Task Revenue
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:rwbc">Task Revenue</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_rwc:rwbc" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:true,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:sjsy">Final Revenue</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_rwc:sjsy" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:true,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Complete Status
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:zxr">Completed By</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_rwc:zxrID" lablename="Completed ByID" /><input readonly="readonly" name="m:crm_rwc:zxr" validate="{empty:false}" lablename="Completed By" showcuruser="0" refid="m:crm_rwc:zxrID" linktype="4" /><a class="link user" href="javascript:;" name="m:crm_rwc:zxr" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_rwc:zxr" atype="reset">重置</a>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:rwjssj">Accepted Date</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_rwc:rwjssj" validate="{empty:false}" datefmt="yyyy-MM-dd HH:mm:ss" displaydate="0" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:rwzt">Current Status</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_rwc:rwzt" validate="{empty:false}" lablename="Current Status" controltype="select">
+                        <option selected="selected" value="notstarted">
+                            尚未开始
+                        </option>
+                        <option value="inprogress">
+                            进行中
+                        </option>
+                        <option value="pauses">
+                            暂停
+                        </option>
+                        <option value="completed">
+                            已完成
+                        </option>
+                        <option value="delays">
+                            延迟
+                        </option>
+                        <option value="termination">
+                            终止
+                        </option></select></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:wcsj">Completed On</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_rwc:wcsj" validate="{empty:false}" datefmt="yyyy-MM-dd HH:mm:ss" displaydate="0" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:wcqk">Progress Description</span>:
+            </td>
+            <td class="formInput" style="width:35%" colspan="3">
+                <textarea style="height:62px;width:560px" cols="24" name="m:crm_rwc:wcqk" validate="{empty:false}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:jgfj">Complete Result</span>:
+            </td>
+            <td class="formInput" style="width:35%" colspan="3">
+                <div name="div_attachment_container">
+                    <div class="attachement">
+                    </div><textarea style="display:none" name="m:crm_rwc:jgfj" lablename="Complete Result" controltype="attachment"></textarea><a onclick="{AttachMent.directUpLoadFile(this);}" class="link selectFile" href="javascript:;" validate="{}" atype="select" field="m:crm_rwc:jgfj">选择</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="teamHead" colspan="4">
+                Task Evaluation
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:pjr">Evaluated By</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_rwc:pjrID" lablename="Evaluated ByID" /><input readonly="readonly" name="m:crm_rwc:pjr" validate="{empty:false}" lablename="Evaluated By" showcuruser="0" refid="m:crm_rwc:pjrID" linktype="4" /><a class="link user" href="javascript:;" name="m:crm_rwc:pjr" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_rwc:pjr" atype="reset">重置</a>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:wcsd">On Time Rate</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_rwc:wcsd" validate="{empty:false}" lablename="On Time Rate" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="5">
+                            5
+                        </option>
+                        <option value="4">
+                            4
+                        </option>
+                        <option value="3">
+                            3
+                        </option>
+                        <option value="2">
+                            2
+                        </option>
+                        <option value="1">
+                            1
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_rwc:wczl">Accuracy</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_rwc:wczl" validate="{empty:false}" lablename="Accuracy" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="5">
+                            5
+                        </option>
+                        <option value="4">
+                            4
+                        </option>
+                        <option value="3">
+                            3
+                        </option>
+                        <option value="2">
+                            2
+                        </option>
+                        <option value="1">
+                            1
+                        </option></select></span>
+            </td>
+            <td class="formTitle" style="width:15%">
+            </td>
+            <td class="formInput" style="width:35%">
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p>
+    <br />
+</p>
