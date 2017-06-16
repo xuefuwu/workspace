@@ -1,8 +1,6 @@
 <p>
     <br />
-</p>
-<script>
-    function mathUnpaid(e){
+</p><script>function mathUnpaid(e){
         var srcEle;
         if(!!e.originalEvent){
             srcEle = e.originalEvent.srcElement;
@@ -65,8 +63,8 @@
             <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
                 <span i18nkey="m:crm_receiverecord:orderamount">Order Amount</span>:
             </td>
-            <td class="formInput" style="width:35%">
-                <input name="m:crm_receiverecord:orderamount" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            <td class="formInput" style="width:35%;word-break:break-all">
+                <input class="dicComboTree" height="200" width="125" name="m:crm_receiverecord:bz" validate="{empty:false}" lablename="币种" nodekey="Currency" /><input name="m:crm_receiverecord:orderamount" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
             </td>
         </tr>
         <tr>

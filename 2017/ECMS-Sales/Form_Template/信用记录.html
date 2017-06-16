@@ -1,0 +1,308 @@
+<p>
+    <br />
+</p>
+<script>
+    function Format(now,mask)
+    {
+        var d = now;
+        var zeroize = function (value, length)
+        {
+            if (!length) length = 2;
+            value = String(value);
+            for (var i = 0, zeros = ''; i < (length - value.length); i++)
+            {
+                zeros += '0';
+            }
+            return zeros + value;
+        };
+     
+        return mask.replace(/"[^"]*"|'[^']*'|\b(?:d{1,4}|m{1,4}|yy(?:yy)?|([hHMstT])\1?|[lLZ])\b/g, function ($0)
+        {
+            switch ($0)
+            {
+                case 'd': return d.getDate();
+                case 'dd': return zeroize(d.getDate());
+                case 'ddd': return ['Sun', 'Mon', 'Tue', 'Wed', 'Thr', 'Fri', 'Sat'][d.getDay()];
+                case 'dddd': return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()];
+                case 'M': return d.getMonth() + 1;
+                case 'MM': return zeroize(d.getMonth() + 1);
+                case 'MMM': return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()];
+                case 'MMMM': return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][d.getMonth()];
+                case 'yy': return String(d.getFullYear()).substr(2);
+                case 'yyyy': return d.getFullYear();
+                case 'h': return d.getHours() % 12 || 12;
+                case 'hh': return zeroize(d.getHours() % 12 || 12);
+                case 'H': return d.getHours();
+                case 'HH': return zeroize(d.getHours());
+                case 'm': return d.getMinutes();
+                case 'mm': return zeroize(d.getMinutes());
+                case 's': return d.getSeconds();
+                case 'ss': return zeroize(d.getSeconds());
+                case 'l': return zeroize(d.getMilliseconds(), 3);
+                case 'L': var m = d.getMilliseconds();
+                    if (m > 99) m = Math.round(m / 10);
+                    return zeroize(m);
+                case 'tt': return d.getHours() < 12 ? 'am' : 'pm';
+                case 'TT': return d.getHours() < 12 ? 'AM' : 'PM';
+                case 'Z': return d.toUTCString().match(/[A-Z]+$/);
+                // Return quoted strings with the surrounding quotes removed
+                default: return $0.substr(1, $0.length - 2);
+            }
+        });
+    };
+    function duedate(e){
+        var srcEle;
+        if(!!e.originalEvent){
+            srcEle = e.originalEvent.srcElement;
+        }else{
+            srcEle = e;
+        }
+        var pidatestr = $(srcEle).closest("tr").find(":text[name='s\\:crm_creditdetail\\:pidate']").val();
+        if(!!pidatestr){
+            var pidate = new Date(pidatestr.replace(/-/g,"/"));
+            var creditdate = parseInt($(srcEle).closest("tr").find(":text[name='s\\:crm_creditdetail\\:creditdate']").val());
+            var ms = creditdate * (1000 * 60 * 60 * 24)
+            var dueDate = new Date(pidate.getTime() + ms);
+            $(srcEle).closest("tr").find("span.duedate").html(Format(dueDate,"yyyy-MM-dd"));
+        }
+    }
+
+    function syncdzsj(e){
+        var srcEle;
+        if(!!e.originalEvent){
+            srcEle = e.originalEvent.srcElement;
+        }else{
+            srcEle = e;
+        }
+        var fksjstr = $(srcEle).val();
+        if(!!fksjstr){
+            var fksjdate = new Date(fksjstr.replace(/-/g,"/"));
+            $(srcEle).closest("tr").find(":text[name='s\\:crm_creditdetail\\:dzsj']").val(Format(fksjdate,"yyyy-MM-dd"));
+        }
+    }
+    function sumcredit(e){
+         var srcEle;
+        if(!!e.originalEvent){
+            srcEle = e.originalEvent.srcElement;
+        }else{
+            srcEle = e;
+        }
+        var usedcredit = 0.0;
+        var srcTable = $("table.listTable tbody");
+        var formArray = new Array();
+        $.each(srcTable.find("tr"),function(index,item){
+            var isduedate = $(item).find(":text[name='s\\:crm_creditdetail\\:fksj']").val();
+            if(!isduedate){
+                if(!!$(item).find(":text[name='s\\:crm_creditdetail\\:usedcredit']").val())
+                usedcredit += parseFloat($(item).find(":text[name='s\\:crm_creditdetail\\:usedcredit']").val());
+            }
+        });
+        $(":text[name='m\\:crm_customercredit\\:usedcredit']").val(usedcredit);
+        var creditlimit =$(":text[name='m\\:crm_customercredit\\:creditlimit']").val();
+        if(!!creditlimit){
+            if(parseFloat(creditlimit)<usedcredit){
+                $("select[name='m\\:crm_customercredit\\:isexced']").val("yes");
+            }else{
+                $("select[name='m\\:crm_customercredit\\:isexced']").val("no");
+            }
+
+        }
+
+    }
+    $(function(){
+        $(":text[name='s\\:crm_creditdetail\\:usedcredit']").bind("input change",function(e){
+            sumcredit(e);
+        });
+        $(":text[name='s\\:crm_creditdetail\\:creditdate']").bind("input change",function(e){
+            duedate(e);
+        });
+        $(":text[name='s\\:crm_creditdetail\\:fksj']").bind("blur",function(e){
+            syncdzsj(e);
+            sumcredit(e)
+        });
+        $(":text[name='s\\:crm_creditdetail\\:pidate']").bind("blur",function(e){
+            duedate(e);
+        });
+
+        $("a.link.add").click(function(){
+            $(":text[name='s\\:crm_creditdetail\\:usedcredit']").bind("input change",function(e){
+                sumcredit(e);
+            });
+            $(":text[name='s\\:crm_creditdetail\\:creditdate']").bind("input change",function(e){
+                duedate(e);
+            });
+            $(":text[name='s\\:crm_creditdetail\\:fksj']").bind("blur",function(e){
+                syncdzsj(e);
+                sumcredit(e)
+            });
+            $(":text[name='s\\:crm_creditdetail\\:pidate']").bind("blur",function(e){
+                duedate(e);
+            });
+        });
+    });
+</script>
+<table class="formTable" cellspacing="0" cellpadding="2" border="1" uetable="null">
+    <thead>
+        <tr>
+            <th class="formHead" colspan="4">
+                Customer Credit
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_customercredit:customer">Customer</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_customercredit:customer" isflag="tableflag" lablename="Customer" validate="{maxlength:2000}" /></span><span style="display:inline-block" name="editable-input"><a class="extend remoteupload" href="javascript:;" dialog="{name:&#39;customercontact&#39;,fields:[{src:&#39;F_COMPANYNAME&#39;,target:&#39;customer&#39;},{src:&#39;F_COUNTRYREGION&#39;,target:&#39;country&#39;}],query:[]}">查找</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_customercredit:country">Country</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_customercredit:country" isflag="tableflag" lablename="Country" validate="{maxlength:2000}" /></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_customercredit:creditlimit">Credit Limit</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_customercredit:creditlimit" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_customercredit:usedcredit">Used Credit</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input name="m:crm_customercredit:usedcredit" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_customercredit:isexced">isExced</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_customercredit:isexced" lablename="isExced" validate="{empty:false}" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="yes">
+                            是
+                        </option>
+                        <option value="no">
+                            否
+                        </option></select></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_customercredit:creditdate">Credit Date</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_customercredit:creditdate" validate="{empty:false}" displaydate="0" datefmt="yyyy-MM-dd" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_customercredit:notes">Notes</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><textarea class="l-textarea" rows="5" cols="40" name="m:crm_customercredit:notes" isflag="tableflag" lablename="Notes" validate="{maxlength:2000}"></textarea></span>
+            </td>
+            <td class="formTitle" style="width:15%">
+            </td>
+            <td class="formInput" style="width:35%">
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p>
+    <br />
+</p>
+<div type="subtable" tablename="crm_creditdetail">
+    <br />
+    <div class="subTableToolBar l-tab-links">
+        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a>
+    </div>
+    <table class="listTable">
+        <thead>
+            <tr>
+                <th class="formHead" colspan="11">
+                    Customer Credit Detail
+                </th>
+            </tr>
+            <tr class="headRow">
+                <th>
+                    <span i18nkey="s:crm_creditdetail:pino">PINO</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_creditdetail:piamount">PI Amount</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_creditdetail:usedcredit">Used Credit</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_creditdetail:pidate">PI Date</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_creditdetail:credit">Credit</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_creditdetail:creditdate">Credit Date</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_creditdetail:duedate">到期时间</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_creditdetail:Sales">Sales</span>
+                </th>
+                <th style="word-break:break-all" width="135">
+                    <span i18nkey="s:crm_creditdetail:fksj">付款时间</span>
+                </th>
+                <th width="165">
+                    <span i18nkey="s:crm_creditdetail:dzsj">到账时间</span>
+                </th>
+                <th>
+                    <span i18nkey="s:crm_creditdetail:remark">Remark</span>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="listRow" formtype="edit">
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="height:21px;width:100px" size="1" name="s:crm_creditdetail:pino" isflag="tableflag" lablename="PINO" validate="{maxlength:2000}" /></span><span style="display:inline-block" name="editable-input"><a class="extend remoteupload" href="javascript:;" dialog="{name:&#39;ddjl&#39;,fields:[{src:&#39;F_PINO&#39;,target:&#39;pino&#39;},{src:&#39;F_TOTALVALUE&#39;,target:&#39;piamount&#39;},{src:&#39;F_SALESMANAGER&#39;,target:&#39;Sales&#39;}],query:[]}">查找</a></span>
+                </td>
+                <td>
+                    <input style="height:21px;width:100px" size="1" name="s:crm_creditdetail:piamount" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input style="height:21px;width:100px" size="1" name="s:crm_creditdetail:usedcredit" validate="{number:true,maxIntLen:13,maxDecimalLen:2}" showtype="{&quot;coinValue&quot;:&quot;&quot;,&quot;isShowComdify&quot;:false,&quot;decimalValue&quot;:2}" />
+                </td>
+                <td>
+                    <input class="Wdate" style="height:21px;width:100px" size="1" name="s:crm_creditdetail:pidate" validate="{empty:false}" displaydate="0" datefmt="yyyy-MM-dd" />
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="height:21px;width:100px" size="1" name="s:crm_creditdetail:credit" isflag="tableflag" lablename="Credit" validate="{maxlength:2000}" /></span>
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" style="height:21px;width:100px" size="1" name="s:crm_creditdetail:creditdate" isflag="tableflag" lablename="Credit Date" validate="{maxlength:50}" /></span>
+                </td>
+                <td>
+                    <span class="duedate" style="width:100px"></span>
+                </td>
+                <td>
+                    <div>
+                        <input class="hidden" type="hidden" name="s:crm_creditdetail:SalesID" lablename="SalesID" /><input readonly="readonly" name="s:crm_creditdetail:Sales" lablename="Sales" validate="{empty:false}" showcuruser="0" /><a class="link user" href="javascript:;" name="s:crm_creditdetail:Sales" atype="select">选择</a><a class="link reset" href="javascript:;" name="s:crm_creditdetail:Sales" atype="reset">重置</a>
+                    </div>
+                </td>
+                <td style="word-break:break-all" width="135">
+                    <input class="Wdate" style="height:21px;width:100px" size="1" name="s:crm_creditdetail:fksj" validate="{empty:false}" displaydate="0" datefmt="yyyy-MM-dd" />
+                </td>
+                <td width="165">
+                    <input class="Wdate" style="height:21px;width:100px" size="1" name="s:crm_creditdetail:dzsj" validate="{empty:false}" displaydate="0" datefmt="yyyy-MM-dd" />
+                </td>
+                <td>
+                    <span style="display:inline-block" name="editable-input" isflag="tableflag"><textarea class="l-textarea" style="height:78px;width:189px" rows="5" cols="1" name="s:crm_creditdetail:remark" isflag="tableflag" lablename="Remark" validate="{maxlength:2000}"></textarea></span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
