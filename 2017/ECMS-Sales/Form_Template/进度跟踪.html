@@ -1,0 +1,820 @@
+<#setting number_format="#">
+<#assign displayFields=bpmDataTemplate.displayField?eval>
+<#assign conditionFields=bpmDataTemplate.conditionField?eval>
+<#assign filterFields=bpmDataTemplate.filterField?eval>
+<#assign manageFields=bpmDataTemplate.manageField?eval>
+
+<#--管理列-->
+<#macro genManage manage managePermission actionUrl pk>
+  <#--编辑-->
+  <#if manage.name == 'edit' >
+    <#if managePermission.edit>
+      <a class="link edit" action="${actionUrl.edit}&__pk__=${pk}" onclick="openLinkDialog({scope:this,isFull:true})" href="#">${manage.desc}</a>
+    </#if>
+  <#--复制-->
+  <#elseif manage.name == 'copy' >
+    <#if managePermission.copy>
+      <a class="link copy" action="${actionUrl.copy}&__pk__=${pk}" onclick="openLinkDialog({scope:this,isFull:true})" href="#">${manage.desc}</a>
+    </#if>
+  <#--删除-->
+  <#elseif manage.name == 'del' >
+    <#if managePermission.del>
+      <a class="link del"  href="${actionUrl.del}&__pk__=${pk}">${manage.desc}</a>
+    </#if>
+  <#--明细-->
+  <#elseif manage.name == 'detail' >
+    <#if managePermission.detail>
+      <a class="link detail" action="${actionUrl.detail}&__pk__=${pk}" onclick="openLinkDialog({scope:this,isFull:true})" href="#">${manage.desc}</a>
+    </#if>
+  <#--启动-->
+  <#elseif manage.name == 'start' >
+    <#if managePermission.start>
+      <#if actionUrl.start?if_exists>
+               <#assign isStart= "false" >
+            <#else> 
+              <#assign isStart= "true" >
+            </#if>
+      <a class="link run" action="${actionUrl.start}&businessKey=${pk}"  onclick="openLinkDialog({scope:this,isFull:true,isStart:${isStart}})" href="#">${manage.desc}</a>
+    </#if>
+  </#if>
+</#macro>
+<#--顶部按钮-->
+<#macro genToolBar manage managePermission actionUrl>
+  <#--新增-->
+  <#if manage.name == 'add' >
+    <#if managePermission.add>
+      <div class="group"><a class="link add" action="${actionUrl.add}"  onclick="openLinkDialog({scope:this,isFull:true})"  href="#"><span></span>${manage.desc}</a></div>
+      <div class="l-bar-separator"></div>
+    </#if>
+  <#--导出-->
+  <#elseif manage.name == 'export' >
+    <#if managePermission.export>
+      
+      <div class="group"> <div class="exportMenu"></div> </div>
+      <div class="l-bar-separator"></div>
+    </#if>
+  <#--导入-->
+  <#elseif manage.name == 'import' >
+    <#if managePermission.import>
+      <div class="group"> <div class="group"><a class="link import" action="${actionUrl.import}"  onclick="openLinkDialog({scope:this,width:450,height:200})"   href="#"><span></span>${manage.desc}</a></div></div>
+      <div class="l-bar-separator"></div>
+    </#if>
+  <#--打印-->  
+  <#elseif manage.name == 'print' >
+    <#if managePermission.print>
+      <div class="group"><a class="link print" action="${actionUrl.print}"  onclick=""  href="#"><span></span>${manage.desc}</a></div>
+      <div class="l-bar-separator"></div>
+    </#if>
+  <#--启动-->  
+  <#elseif manage.name == 'start' >
+    <#if managePermission.start>
+          <#if actionUrl.start?if_exists>
+               <#assign isStart= "false" >
+            <#else> 
+              <#assign isStart= "true" >
+            </#if>
+      <div class="group"><a class="link run" action="${actionUrl.start}"  onclick="openLinkDialog({scope:this,isFull:true,isStart:${isStart}})"  href="#"><span></span>${manage.desc}</a></div>
+      <div class="l-bar-separator"></div>
+    </#if>
+  </#if>
+</#macro>
+
+
+<#if filterFields?if_exists>
+<div class="panel" ajax="ajax"  displayId="${bpmDataTemplate.id}" filterKey="${filterKey}" >
+<#if filterFields?size gt 1>
+<div class='panel-nav'>
+  <div class="l-tab-links">
+    <ul style="left: 0px; ">
+      <#list filterFields as field>
+      <li tabid="${field.key}" <#if field.key ==filterKey> class="l-selected"</#if>>
+        <a href="${field.url}" title="${field.name}">${field.desc}</a>
+      </li>
+      </#list>
+    </ul>
+  </div>
+</div>
+</#if>
+  <div class="panel-top">
+    <div class="tbar-title">
+      <span class="tbar-label"></span>
+    </div>
+      <div class="panel-toolbar">
+        <div class="toolBar">
+            <div class="group"><a class="link ajaxSearch" href="#" onclick="handlerSearchAjax(this)"><span></span>查询</a></div>
+            <div class="l-bar-separator"></div>
+          <#list manageFields as manage>
+            <@genToolBar manage=manage managePermission=managePermission actionUrl=actionUrl />
+          </#list>
+        </div>
+      </div>
+      <div class="panel-search">
+        <form id="searchForm" name="searchForm" method="post" action="${searchFormURL}">
+            <ul class="row">
+              <li>
+      <span class="label">形式发票:</span>    
+        <input type="text" name="Q_xsfp_S" class="inputText"  value="${param['Q_xsfp_S']}"  />
+              </li>
+              <li>
+      <span class="label">客户:</span>    
+        <input type="text" name="Q_kh_S" class="inputText"  value="${param['Q_kh_S']}"  />
+              </li>
+              <li>
+      <span class="label">工厂:</span>    
+        <input type="text" name="Q_gc_S" class="inputText"  value="${param['Q_gc_S']}"  />
+              </li>
+              <li>
+      <span class="label">合同号:</span>    
+        <input type="text" name="Q_hth_S" class="inputText"  value="${param['Q_hth_S']}"  />
+              </li>
+            </ul>
+        </form>
+      </div>
+  </div>
+  <div class="panel-body">
+      <table cellpadding="1" cellspacing="1" class="table-grid table-list">
+      <thead>
+        <tr>
+          <#if checkbox>
+              <th> <input id="chkall" type="checkbox"></th>
+                  </#if>
+               <#if permission.xsfp>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=xsfp">
+                  形式发票<#if (sortField?? && sortField=="xsfp")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.xsfpbh>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=xsfpbh">
+                  形式发票编号<#if (sortField?? && sortField=="xsfpbh")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.kh>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=kh">
+                  客户<#if (sortField?? && sortField=="kh")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.khbh>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=khbh">
+                  客户编号<#if (sortField?? && sortField=="khbh")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.gc>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=gc">
+                  工厂<#if (sortField?? && sortField=="gc")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.gcdm>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=gcdm">
+                  工厂代码<#if (sortField?? && sortField=="gcdm")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.fobrq>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=fobrq">
+                  FOB日期<#if (sortField?? && sortField=="fobrq")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.htjq>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=htjq">
+                  合同交期<#if (sortField?? && sortField=="htjq")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.qhjq>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=qhjq">
+                  签回交期<#if (sortField?? && sortField=="qhjq")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.ggrq>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=ggrq">
+                  更改日期<#if (sortField?? && sortField=="ggrq")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.hth>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=hth">
+                  合同号<#if (sortField?? && sortField=="hth")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.htbh>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=htbh">
+                  合同编号<#if (sortField?? && sortField=="htbh")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.sl>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=sl">
+                  数量<#if (sortField?? && sortField=="sl")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.mp>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=mp">
+                  毛坯<#if (sortField?? && sortField=="mp")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.jjg>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=jjg">
+                  机加工<#if (sortField?? && sortField=="jjg")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.zp>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=zp">
+                  装配<#if (sortField?? && sortField=="zp")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.sy>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=sy">
+                  试压<#if (sortField?? && sortField=="sy")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.yq>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=yq">
+                  油漆<#if (sortField?? && sortField=="yq")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.bz>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=bz">
+                  包装<#if (sortField?? && sortField=="bz")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.jd>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=jd">
+                  进度<#if (sortField?? && sortField=="jd")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.yjyy>
+                 <th>
+                  延交原因  
+                </th>
+                </#if>
+               <#if permission.qcysrq>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=qcysrq">
+                  QC验收日期<#if (sortField?? && sortField=="qcysrq")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.sfwc>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=sfwc">
+                  <#if (sortField?? && sortField=="sfwc")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.sfzs>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=sfzs">
+                  是否准时<#if (sortField?? && sortField=="sfzs")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.ddly>
+                 <th>
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=ddly">
+                  订单来源<#if (sortField?? && sortField=="ddly")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.xsdb>
+                 <th style="width:80px;">
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=xsdb">
+                  Sales Manager<#if (sortField?? && sortField=="xsdb")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+               <#if permission.fzqc>
+                 <th style="width:75px;">
+                <a href="#" onclick="linkAjax(this)" action="${pageURL}&${tableIdCode}__ns__=fzqc">
+                  QC<#if (sortField?? && sortField=="fzqc")><#if (orderSeq=="ASC")>↑<#else>↓</#if></#if>
+                </a>
+                </th>
+                </#if>
+            <th width="150px">管理</th>
+        </tr>
+    </thead>
+    <tbody>  
+          <#list bpmDataTemplate.list as data>
+          <tr class="<#if data_index % 2 == 0>odd</#if><#if data_index % 2 == 1>even</#if>">
+          <#if checkbox>
+              <td style="width:30px;">
+                          <input class="pk" type="checkbox" value="${data.ID}" name="ID">
+                        </td>
+                    </#if>
+            <#if permission.xsfp>
+              <td style="width:80px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.xsfp}</a>
+  <#else>
+  ${data.xsfp}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.xsfpbh>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.xsfpbh}</a>
+  <#else>
+  ${data.xsfpbh}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.kh>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.kh}</a>
+  <#else>
+  ${data.kh}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.khbh>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.khbh}</a>
+  <#else>
+  ${data.khbh}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.gc>
+              <td style="width:40px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.gc}</a>
+  <#else>
+  ${data.gc}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.gcdm>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.gcdm}</a>
+  <#else>
+  ${data.gcdm}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.fobrq>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.fobrq}</a>
+  <#else>
+  ${data.fobrq}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.htjq>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">
+    <#if data.htjq!=''>
+        ${data.htjq[5..9]}
+    </#if></a>
+  <#else>
+  <#if data.htjq!=''>
+        ${data.htjq[5..9]}
+    </#if>
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.qhjq>
+              <td style="width:70px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.qhjq}</a>
+  <#else>
+  ${data.qhjq}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.ggrq>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">
+    <#if data.ggrq!=''>
+        ${data.ggrq[5..9]}
+    </#if></a>
+  <#else>
+  <#if data.ggrq!=''>
+        ${data.ggrq[5..9]}
+    </#if>
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.hth>
+              <td style="width:75px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.hth}</a>
+  <#else>
+  ${data.hth}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.htbh>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.htbh}</a>
+  <#else>
+  ${data.htbh}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.sl>
+              <td style="width:30px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.sl}</a>
+  <#else>
+  ${data.sl}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.mp>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+  <a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">
+    <#if data.mp!=''>
+        ${data.mp[5..9]}
+    </#if>
+  </a>
+  <#else>
+    <#if data.mp!=''>
+        ${data.mp[5..9]}
+    </#if>
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.jjg>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">
+    <#if data.jjg!=''>
+        ${data.jjg[5..9]}
+    </#if>
+    </a>
+  <#else>
+  <#if data.jjg!=''>
+        ${data.jjg[5..9]}
+    </#if>
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.zp>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;"><#if data.zp!=''>
+        ${data.zp[5..9]}
+    </#if></a>
+  <#else>
+  <#if data.zp!=''>
+        ${data.zp[5..9]}
+    </#if>
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.sy>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;"><#if data.sy!=''>
+        ${data.sy[5..9]}
+    </#if></a>
+  <#else>
+  <#if data.sy!=''>
+        ${data.sy[5..9]}
+    </#if>
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.yq>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;"><#if data.yq!=''>
+        ${data.yq[5..9]}
+    </#if></a>
+  <#else>
+  <#if data.yq!=''>
+        ${data.yq[5..9]}
+    </#if>
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.bz>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;"><#if data.bz!=''>
+        ${data.bz[5..9]}
+    </#if></a>
+  <#else>
+  <#if data.bz!=''>
+        ${data.bz[5..9]}
+    </#if>
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.jd>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.jd}</a>
+  <#else>
+  ${data.jd}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.yjyy>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.yjyy}</a>
+  <#else>
+  ${data.yjyy}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.qcysrq>
+              <td style="width:50px;">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">
+    <#if data.qcysrq!=''>
+        ${data.qcysrq[5..9]}
+    </#if></a>
+  <#else>
+  <#if data.qcysrq!=''>
+        ${data.qcysrq[5..9]}
+    </#if>
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.sfwc>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.sfwc}</a>
+  <#else>
+  ${data.sfwc}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.sfzs>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.sfzs}</a>
+  <#else>
+  ${data.sfzs}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.ddly>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.ddly}</a>
+  <#else>
+  ${data.ddly}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.xsdb>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.xsdb}</a>
+  <#else>
+  ${data.xsdb}
+  </#if>
+              </td>  
+            </#if>
+            <#if permission.fzqc>
+              <td style="">
+  <#if managePermission.detail>
+<a action="${actionUrl.detail}&__pk__=${data.ID}" onclick="openLinkDialog({scope:this,isFull:true})" href="javascript:;">${data.fzqc}</a>
+  <#else>
+  ${data.fzqc}
+  </#if>
+              </td>  
+            </#if>
+            <td  class="rowOps">
+              <#list manageFields as manage>
+                <@genManage manage=manage managePermission=managePermission actionUrl=actionUrl pk=data.ID/>
+              </#list>
+            </td>
+          </tr>
+        </#list>
+    </tbody>
+      </table>
+        <#if bpmDataTemplate.list?size==0>
+          <div class="panel-norecord">
+            <div class="l-panel-bbar-inner">
+              <div style="padding:6px 0px 12px 0px;">当前没有记录。</div>
+            </div>
+          </div>
+        </#if>
+        </div>
+      ${pageHtml}
+  
+</div>
+<div style="display: none;" id="exportField" >
+    <table cellpadding="1" cellspacing="1" class="table-grid table-list">
+      <tr>
+            <th width="30px"><input id="checkFieldAll" type="checkbox" checked="checked">选择</th>
+            <th>字段</th>
+      </tr>  
+           <#if permission.xsfp>
+           <tr>
+             <td><input class="field" type="checkbox" value="xsfp" name="field" checked="checked"></td>
+             <td>形式发票</td>
+          <tr>
+          </#if>
+           <#if permission.xsfpbh>
+           <tr>
+             <td><input class="field" type="checkbox" value="xsfpbh" name="field" checked="checked"></td>
+             <td>形式发票编号</td>
+          <tr>
+          </#if>
+           <#if permission.kh>
+           <tr>
+             <td><input class="field" type="checkbox" value="kh" name="field" checked="checked"></td>
+             <td>客户</td>
+          <tr>
+          </#if>
+           <#if permission.khbh>
+           <tr>
+             <td><input class="field" type="checkbox" value="khbh" name="field" checked="checked"></td>
+             <td>客户编号</td>
+          <tr>
+          </#if>
+           <#if permission.gc>
+           <tr>
+             <td><input class="field" type="checkbox" value="gc" name="field" checked="checked"></td>
+             <td>工厂</td>
+          <tr>
+          </#if>
+           <#if permission.gcdm>
+           <tr>
+             <td><input class="field" type="checkbox" value="gcdm" name="field" checked="checked"></td>
+             <td>工厂代码</td>
+          <tr>
+          </#if>
+           <#if permission.fobrq>
+           <tr>
+             <td><input class="field" type="checkbox" value="fobrq" name="field" checked="checked"></td>
+             <td>FOB日期</td>
+          <tr>
+          </#if>
+           <#if permission.htjq>
+           <tr>
+             <td><input class="field" type="checkbox" value="htjq" name="field" checked="checked"></td>
+             <td>合同交期</td>
+          <tr>
+          </#if>
+           <#if permission.qhjq>
+           <tr>
+             <td><input class="field" type="checkbox" value="qhjq" name="field" checked="checked"></td>
+             <td>签回交期</td>
+          <tr>
+          </#if>
+           <#if permission.ggrq>
+           <tr>
+             <td><input class="field" type="checkbox" value="ggrq" name="field" checked="checked"></td>
+             <td>更改日期</td>
+          <tr>
+          </#if>
+           <#if permission.hth>
+           <tr>
+             <td><input class="field" type="checkbox" value="hth" name="field" checked="checked"></td>
+             <td>合同号</td>
+          <tr>
+          </#if>
+           <#if permission.htbh>
+           <tr>
+             <td><input class="field" type="checkbox" value="htbh" name="field" checked="checked"></td>
+             <td>合同编号</td>
+          <tr>
+          </#if>
+           <#if permission.sl>
+           <tr>
+             <td><input class="field" type="checkbox" value="sl" name="field" checked="checked"></td>
+             <td>数量</td>
+          <tr>
+          </#if>
+           <#if permission.mp>
+           <tr>
+             <td><input class="field" type="checkbox" value="mp" name="field" checked="checked"></td>
+             <td>毛坯</td>
+          <tr>
+          </#if>
+           <#if permission.jjg>
+           <tr>
+             <td><input class="field" type="checkbox" value="jjg" name="field" checked="checked"></td>
+             <td>机加工</td>
+          <tr>
+          </#if>
+           <#if permission.zp>
+           <tr>
+             <td><input class="field" type="checkbox" value="zp" name="field" checked="checked"></td>
+             <td>装配</td>
+          <tr>
+          </#if>
+           <#if permission.sy>
+           <tr>
+             <td><input class="field" type="checkbox" value="sy" name="field" checked="checked"></td>
+             <td>试压</td>
+          <tr>
+          </#if>
+           <#if permission.yq>
+           <tr>
+             <td><input class="field" type="checkbox" value="yq" name="field" checked="checked"></td>
+             <td>油漆</td>
+          <tr>
+          </#if>
+           <#if permission.bz>
+           <tr>
+             <td><input class="field" type="checkbox" value="bz" name="field" checked="checked"></td>
+             <td>包装</td>
+          <tr>
+          </#if>
+           <#if permission.jd>
+           <tr>
+             <td><input class="field" type="checkbox" value="jd" name="field" checked="checked"></td>
+             <td>进度</td>
+          <tr>
+          </#if>
+           <#if permission.yjyy>
+           <tr>
+             <td><input class="field" type="checkbox" value="yjyy" name="field" checked="checked"></td>
+             <td>延交原因</td>
+          <tr>
+          </#if>
+           <#if permission.qcysrq>
+           <tr>
+             <td><input class="field" type="checkbox" value="qcysrq" name="field" checked="checked"></td>
+             <td>QC验收日期</td>
+          <tr>
+          </#if>
+           <#if permission.sfwc>
+           <tr>
+             <td><input class="field" type="checkbox" value="sfwc" name="field" checked="checked"></td>
+             <td></td>
+          <tr>
+          </#if>
+           <#if permission.sfzs>
+           <tr>
+             <td><input class="field" type="checkbox" value="sfzs" name="field" checked="checked"></td>
+             <td>是否准时</td>
+          <tr>
+          </#if>
+           <#if permission.ddly>
+           <tr>
+             <td><input class="field" type="checkbox" value="ddly" name="field" checked="checked"></td>
+             <td>订单来源</td>
+          <tr>
+          </#if>
+           <#if permission.xsdb>
+           <tr>
+             <td><input class="field" type="checkbox" value="xsdb" name="field" checked="checked"></td>
+             <td>Sales Manager</td>
+          <tr>
+          </#if>
+           <#if permission.fzqc>
+           <tr>
+             <td><input class="field" type="checkbox" value="fzqc" name="field" checked="checked"></td>
+             <td>负责QC</td>
+          <tr>
+          </#if>
+    </table>    
+</div>
+<form id="exportForm" name="exportForm" method="post" target="download" action="exportData.ht" style="display: none;"></form>  
+<iframe id="download" name="download" height="0px" width="0px" style="display: none;"></iframe>     
+
+<#else>
+   <div style="padding:6px 0px 12px 0px;">当前用户没有满足的过滤条件,请设置过滤条件。<div>
+</#if>

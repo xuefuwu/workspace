@@ -1,0 +1,198 @@
+<p>
+    <br />
+</p>
+<table class="formTable" cellspacing="0" cellpadding="2" border="1">
+    <thead>
+        <tr>
+            <th class="formHead" colspan="4">
+                进度跟踪
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:xsfp">形式发票</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_jdgz:xsfp" isflag="tableflag" validate="{maxlength:2000}" lablename="形式发票" /></span><input type="hidden" name="m:crm_jdgz:xsfpbh" isflag="tableflag" validate="{maxlength:2000}" lablename="形式发票编号" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:gc">工厂</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_jdgz:gc" isflag="tableflag" validate="{maxlength:2000}" lablename="工厂" /></span><input type="hidden" name="m:crm_jdgz:gcdm" isflag="tableflag" validate="{maxlength:2000}" lablename="工厂代码" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:hth">合同号</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_jdgz:hth" isflag="tableflag" validate="{maxlength:2000}" lablename="合同号" /></span><input type="hidden" name="m:crm_jdgz:htbh" isflag="tableflag" validate="{maxlength:2000}" lablename="合同编号" /><span style="display:inline-block" name="editable-input"><a class="extend remoteupload" href="javascript:;" dialog="{name:&#39;htxx&#39;,fields:[{src:&#39;F_CONTRACTNO&#39;,target:&#39;hth&#39;},{src:&#39;F_SUPPLIER&#39;,target:&#39;gc&#39;},{src:&#39;F_PROFORMAINVOICE&#39;,target:&#39;xsfp&#39;},{src:&#39;F_COMPANYNAME&#39;,target:&#39;kh&#39;},{src:&#39;F_ORDERFROM&#39;,target:&#39;ddly&#39;},{src:&#39;FOBDATE&#39;,target:&#39;fobrq&#39;},{src:&#39;F_DELIVERYDATE&#39;,target:&#39;htjq&#39;},{src:&#39;TOTAL&#39;,target:&#39;sl&#39;},{src:&#39;PURCHASEID&#39;,target:&#39;htbh&#39;},{src:&#39;PIID&#39;,target:&#39;xsfpbh&#39;}],query:[]}">查找合同</a></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:fobrq">FOB日期</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:fobrq" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:htjq">合同交期</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:htjq" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:qhjq">签回交期</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:qhjq" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:ggrq">更改日期</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:ggrq" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:sl">数量</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_jdgz:sl" isflag="tableflag" validate="{maxlength:2000}" lablename="数量" /></span>
+            </td>
+       </tr>
+        <tr>
+           <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:mp">毛坯</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:mp" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:jjg">机加工</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:jjg" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:zp">装配</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:zp" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:sy">试压</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:sy" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:yq">油漆</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:yq" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:bz">包装</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:bz" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:jd">进度</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span style="display:inline-block" name="editable-input" isflag="tableflag"><input class="inputText" name="m:crm_jdgz:jd" isflag="tableflag" validate="{maxlength:2000}" lablename="进度" /></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:yjyy">延交原因</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <textarea name="m:crm_jdgz:yjyy" validate="{empty:false}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:qcysrq">QC验收日期</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <input class="Wdate" name="m:crm_jdgz:qcysrq" validate="{empty:false}" datefmt="yyyy-MM-dd" displaydate="0" />
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:sfwc">是否完成</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_jdgz:sfwc" validate="{empty:false}" lablename="是否完成" controltype="select">
+                        <option selected="selected" value="no">
+                            否
+                        </option>
+                        <option value="yes">
+                            是
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:sfzs">是否准时</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_jdgz:sfzs" validate="{empty:false}" lablename="是否准时" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="yes">
+                            是
+                        </option>
+                        <option value="no">
+                            否
+                        </option></select></span>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:ddly">订单来源</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_jdgz:ddly" validate="{empty:false}" lablename="订单来源" controltype="select">
+                        <option selected="selected">
+                        </option>
+                        <option value="cnoffice">
+                            中国订单
+                        </option>
+                        <option value="usoffice">
+                            美国订单
+                        </option></select></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:xsdb">销售代表</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_jdgz:xsdbID" lablename="销售代表ID" /><input readonly="readonly" name="m:crm_jdgz:xsdb" validate="{empty:false}" lablename="销售代表" showcuruser="0" refid="m:crm_jdgz:xsdbID" linktype="4" /><a class="link user" href="javascript:;" name="m:crm_jdgz:xsdb" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_jdgz:xsdb" atype="reset">重置</a>
+                </div>
+            </td>
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
+                <span i18nkey="m:crm_jdgz:fzqc">负责QC</span>:
+            </td>
+            <td class="formInput" style="width:35%">
+                <div>
+                    <input class="hidden" type="hidden" name="m:crm_jdgz:fzqcID" lablename="负责QCID" /><input readonly="readonly" name="m:crm_jdgz:fzqc" validate="{empty:false}" lablename="负责QC" showcuruser="0" refid="m:crm_jdgz:fzqcID" linktype="4" /><a class="link user" href="javascript:;" name="m:crm_jdgz:fzqc" atype="select">选择</a><a class="link reset" href="javascript:;" name="m:crm_jdgz:fzqc" atype="reset">重置</a>
+                </div>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<input class="inputText" name="m:crm_jdgz:kh" isflag="tableflag" validate="{maxlength:2000}" lablename="客户" type="hidden" /><input type="hidden" name="m:crm_jdgz:khbh" isflag="tableflag" validate="{maxlength:2000}" lablename="客户编号" type="hidden" />
+<p>
+    <br />
+</p>
