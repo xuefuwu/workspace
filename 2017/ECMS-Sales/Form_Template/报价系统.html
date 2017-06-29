@@ -34,18 +34,12 @@ $(function() {
 	$(":text[name='m\\:crm_quotation\\:Freight']").bind("input propertychange",function(e){
 		sumsubtotal(e);
 	});
-    var less = $('link[rel="stylesheet/less"]');
-    if (!less.length) {
-        return;
-    }
-    var lessfile = less.filter('[data-code=true]');
-    if (!lessfile.length) {
-        loadLessjs();
-        return;
-    }
+	$("a.clear").click(function(){
+		clrTable();
+	})
 });
-function loadLessjs() {
-    $.getScript('/ecms/js/tinyselect/lib/less.min.js');
+function clrTable(){
+	$("table.listTable").find("tr.listRow[formtype='newrow']").remove();
 }
 function sumsubtotal(e){
 	var subtotal = 0.0;
@@ -73,9 +67,9 @@ function getInquiryList(){
     $.post(url,{f:"getinquirylist"},function(data){
         var jsondata = typeof (data) == 'string' ? $.parseJSON(data) : data;
         $.each(jsondata, function (i, item) {
-            il.push({ "id": item.ID, "text": item.F_XDH });
+            il.push({ "id": ""+item.ID, "text": item.F_XDH });
         });
-        var inquiryselect = TinySelect("div#inquiryno", {
+        var inquiryselect = tinyselect("div#inquiryno", {
             item: {
                 data: il,
                 value:$(":hidden[name='m\\:crm_quotation\\:inquirynoid']").val().length>0?$(":hidden[name='m\\:crm_quotation\\:inquirynoid']").val().split(','):null
@@ -95,7 +89,7 @@ function getshippingtermList(){
         $.each(jsondata, function (i, item) {
             il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
         });
-        var inquiryselect = TinySelect("div#shippingterm", {
+        var inquiryselect = tinyselect("div#shippingterm", {
             item: {
                 data: il,
                 value:$(":hidden[name='m\\:crm_quotation\\:shippingterm']").val().length>0?$(":hidden[name='m\\:crm_quotation\\:shippingterm']").val().split(','):null
@@ -115,7 +109,7 @@ function getpaymenttermList(){
         $.each(jsondata, function (i, item) {
             il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
         });
-        var inquiryselect = TinySelect("div#paymentterm", {
+        var inquiryselect = tinyselect("div#paymentterm", {
             item: {
                 data: il,
                 value:$(":hidden[name='m\\:crm_quotation\\:PaymentTerms']").val().length>0?$(":hidden[name='m\\:crm_quotation\\:PaymentTerms']").val().split(','):null
@@ -271,7 +265,7 @@ function readClipboardData(tdobj, clipData) {
                         $(tableObj).find("tr:eq("+(trIndex+i)+")").find("td:eq("+(tdIndex+j)+")").find(":input:first").val(cols[j]);
                     }
                 }
-                descen($(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_quote_items\\:ModelNumber'],textarea[name='s\\:crm_quote_items\\:ModelNumber']").val(),$(tableObj).find("tr:eq(" + (trIndex + i) + ")").find("td").find(":text[name='s\\:crm_quote_items\\:FullDescription'],textarea[name='s\\:crm_quote_items\\:FullDescription']"),$(tableObj).find("tr:eq(" + (trIndex + i) + ")").find("td").find(":text[name='s\\:crm_quote_items\\:DescriptionLine'],textarea[name='s\\:crm_quote_items\\:DescriptionLine']"));
+            descen($(tableObj).find("tr:eq(" + (trIndex + i) + ")").find(":text[name='s\\:crm_quote_items\\:ModelNumber'],textarea[name='s\\:crm_quote_items\\:ModelNumber']").val(),$(tableObj).find("tr:eq(" + (trIndex + i) + ")").find("td").find(":text[name='s\\:crm_quote_items\\:FullDescription'],textarea[name='s\\:crm_quote_items\\:FullDescription']"),$(tableObj).find("tr:eq(" + (trIndex + i) + ")").find("td").find(":text[name='s\\:crm_quote_items\\:DescriptionLine'],textarea[name='s\\:crm_quote_items\\:DescriptionLine']"));
         }
     } else {
         $(tdobj).val(clipData);
@@ -647,10 +641,10 @@ function gethl(currencytype,textbox){
             <td class="formInput" style="width:35%">
                 <textarea name="m:crm_quotation:Comments" validate="{empty:false}"></textarea>
             </td>
-            <td class="formTitle selectTdClass" style="width:15%" nowrap="nowrap" align="right">
+            <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
                 <span i18nkey="m:crm_quotation:reportheader">Report Header</span>:
             </td>
-            <td class="formInput selectTdClass" style="width:35%">
+            <td class="formInput" style="width:35%">
                 <span class="selectinput" style="display:inline-block;padding:2px;" name="editable-input"><select name="m:crm_quotation:reportheader" validate="{empty:false}" lablename="Report Header" controltype="select">
                         <option selected="selected">
                         </option>
@@ -803,7 +797,7 @@ function gethl(currencytype,textbox){
 <div type="subtable" tablename="crm_quote_items">
     <br />
     <div class="subTableToolBar l-tab-links">
-        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a>
+        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a><a onclick="return false;" class="link clear" href="javascript:;" atype="clear">清除内容</a>
     </div>
     <table class="listTable" uetable="null">
         <tbody>

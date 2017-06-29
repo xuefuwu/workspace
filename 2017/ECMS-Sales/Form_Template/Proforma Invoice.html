@@ -34,7 +34,13 @@ $(function(){
 	$(":text[name='m\\:crm_proforma_invoice\\:freight']").bind("input propertychange",function(e){
 		sumsubtotal(e);
 	});
+	$("a.clear").click(function(){
+		clrTable();
+	})
 });
+function clrTable(){
+	$("table.listTable").find("tr.listRow[formtype='newrow']").remove();
+}
 function getshippingtermList(){
     var url = "/ecms/commons/fulldescajax.jsp";
     var il = new Array();
@@ -43,7 +49,7 @@ function getshippingtermList(){
         $.each(jsondata, function (i, item) {
             il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
         });
-        var inquiryselect = TinySelect("div#shippingterm", {
+        var inquiryselect = tinyselect("div#shippingterm", {
             item: {
                 data: il,
                 value:$(":hidden[name='m\\:crm_proforma_invoice\\:shippingterm']").val().length>0?$(":hidden[name='m\\:crm_proforma_invoice\\:shippingterm']").val().split(','):null
@@ -62,7 +68,7 @@ function getpaymenttermList(){
         $.each(jsondata, function (i, item) {
             il.push({ "id": item.F_TERMNAME, "text": item.F_TERMNAME });
         });
-        var inquiryselect = TinySelect("div#paymentterm", {
+        var inquiryselect = tinyselect("div#paymentterm", {
             item: {
                 data: il,
                 value:$(":hidden[name='m\\:crm_proforma_invoice\\:paymentterm']").val().length>0?$(":hidden[name='m\\:crm_proforma_invoice\\:paymentterm']").val().split(','):null
@@ -346,10 +352,9 @@ function excelKeydown(e){
             <td class="formInput" style="width:35%">
                 <div class="tinyselectcontext-container">
                     <input type="hidden" name="m:crm_proforma_invoice:paymentterm" />
-                    <div id="paymentterm" class="tinyselectcontext" data-text="m:crm_proforma_invoice:paymentterm" data-hidden="m:crm_proforma_invoice:paymentterm">
+                    <div id="paymentterm" class="tinyselectcontext" data-hidden="m:crm_proforma_invoice:paymentterm" data-text="m:crm_proforma_invoice:paymentterm">
                     </div>
                 </div>
-
             </td>
             <td class="formTitle" style="width:15%" nowrap="nowrap" align="right">
                 <span i18nkey="m:crm_proforma_invoice:shippingterm">Shipping Term</span>:
@@ -357,7 +362,7 @@ function excelKeydown(e){
             <td class="formInput" style="width:35%">
                 <div class="tinyselectcontext-container">
                     <input type="hidden" name="m:crm_proforma_invoice:shippingterm" />
-                    <div id="shippingterm" class="tinyselectcontext" data-text="m:crm_proforma_invoice:shippingterm" data-hidden="m:crm_proforma_invoice:shippingterm">
+                    <div id="shippingterm" class="tinyselectcontext" data-hidden="m:crm_proforma_invoice:shippingterm" data-text="m:crm_proforma_invoice:shippingterm">
                     </div>
                 </div>
             </td>
@@ -462,7 +467,7 @@ function excelKeydown(e){
 <div type="subtable" tablename="crm_proforma_items">
     <br />
     <div class="subTableToolBar l-tab-links">
-        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a>
+        <a onclick="return false;" class="link add" href="javascript:;" atype="add">添加</a><a onclick="return false;" class="link clear" href="javascript:;" atype="clear">清除内容</a>
     </div>
     <table class="listTable" uetable="null">
         <tbody>
